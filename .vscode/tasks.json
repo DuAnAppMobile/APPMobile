@@ -1,0 +1,34 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "1. Backend + seed",
+      "type": "shell",
+      "command": "powershell",
+      "args": ["-ExecutionPolicy", "Bypass", "-File", "${workspaceFolder}/scripts/run-backend.ps1"],
+      "isBackground": true,
+      "problemMatcher": "$msCompile"
+    },
+    {
+      "label": "2. Flutter web",
+      "type": "shell",
+      "command": "powershell",
+      "args": ["-ExecutionPolicy", "Bypass", "-File", "${workspaceFolder}/scripts/run-web.ps1"],
+      "problemMatcher": []
+    },
+    {
+      "label": "2. Flutter Android",
+      "type": "shell",
+      "command": "powershell",
+      "args": ["-ExecutionPolicy", "Bypass", "-File", "${workspaceFolder}/scripts/run-android.ps1"],
+      "problemMatcher": []
+    },
+    {
+      "label": "Setup + test all",
+      "type": "shell",
+      "command": "powershell",
+      "args": ["-ExecutionPolicy", "Bypass", "-File", "${workspaceFolder}/scripts/setup.ps1"],
+      "problemMatcher": ["$msCompile"]
+    }
+  ]
+}

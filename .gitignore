@@ -1,0 +1,32 @@
+# .NET
+**/bin/
+**/obj/
+*.user
+*.suo
+
+# IDE
+.vs/
+.idea/
+.vscode/*.log
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Local configuration
+*.local.json
+.env
+*.db
+*.db-shm
+*.db-wal
+emulator-driver-install.log
+.run-logs/
+dist/
+
+# APK phat hanh qua GitHub Releases, khong commit vao source
+App-Android/*.apk
+*.jks
+*.keystore
+key.properties
+.env.*
+*.db-journal
