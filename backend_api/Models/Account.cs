@@ -5,6 +5,7 @@ public class Account
     public int Id { get; set; }
     public required string Username { get; set; }
     public required string PasswordHash { get; set; }
+    public string Role { get; set; } = "User";
     public int PlayerId { get; set; }
     public Player Player { get; set; } = null!;
     public int FailedLogins { get; set; }

@@ -27,6 +27,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             e.HasIndex(a => a.PlayerId).IsUnique();
             e.Property(a => a.Username).HasMaxLength(32);
             e.Property(a => a.PasswordHash).HasMaxLength(512);
+            e.Property(a => a.Role).HasMaxLength(20).HasDefaultValue("User").IsRequired();
             e.HasOne(a => a.Player).WithMany().HasForeignKey(a => a.PlayerId).OnDelete(DeleteBehavior.Restrict);
         });
         modelBuilder.Entity<LoginSession>(e => {

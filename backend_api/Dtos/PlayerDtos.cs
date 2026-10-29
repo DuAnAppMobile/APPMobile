@@ -42,6 +42,17 @@ public class PlayerProfileDto
     public List<BadgeDto> Badges { get; set; } = [];
 }
 
+public class PlayerHistoryDto
+{
+    public int AttemptId { get; set; }
+    public string StageName { get; set; } = string.Empty;
+    public int CorrectCount { get; set; }
+    public int TotalQuestions { get; set; }
+    public int ExpEarned { get; set; }
+    public string Status { get; set; } = string.Empty;
+    public DateTime PlayedAt { get; set; }
+}
+
 public class BadgeDto
 {
     public int Id { get; set; }

@@ -1,10 +1,15 @@
 using EnglishRpg.Api.Models;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 
 namespace EnglishRpg.Api.Data.Seed;
 
 public static class SampleDataSeeder
 {
+    private static readonly PasswordHasher<Account> PasswordHasher = new(Options.Create(
+        new PasswordHasherOptions { IterationCount = 600000 }));
+
     private static readonly University[] Universities =
     [
         new() { Name = "ĐH Quốc gia Hà Nội", ShortName = "VNU", ExpRequired = 10000 },
@@ -200,6 +205,35 @@ public static class SampleDataSeeder
 
     public static async Task SeedAsync(AppDbContext dbContext, CancellationToken cancellationToken = default)
     {
+        var adminAccount = await dbContext.Accounts
+            .Include(account => account.Player)
+            .SingleOrDefaultAsync(account => account.Username == "admin", cancellationToken);
+        if (adminAccount is null)
+        {
+            var adminPlayerName = "admin";
+            var suffix = 1;
+            while (await dbContext.Players.AnyAsync(player => player.Name == adminPlayerName, cancellationToken))
+            {
+                adminPlayerName = $"admin_account_{suffix++}";
+            }
+
+            adminAccount = new Account
+            {
+                Username = "admin",
+                PasswordHash = string.Empty,
+                Role = "Admin",
+                Player = new Player { Name = adminPlayerName, CreatedAt = DateTime.UtcNow }
+            };
+            adminAccount.PasswordHash = PasswordHasher.HashPassword(adminAccount, "Admin123456");
+            dbContext.Accounts.Add(adminAccount);
+        }
+        else
+        {
+            adminAccount.Role = "Admin";
+        }
+
+        await dbContext.SaveChangesAsync(cancellationToken);
+
         var existingUniversityShortNames = await dbContext.Universities
             .Select(university => university.ShortName)
             .ToListAsync(cancellationToken);

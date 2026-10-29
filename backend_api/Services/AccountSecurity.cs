@@ -4,6 +4,7 @@ using System.Text;
 using System.Text.Encodings.Web;
 using EnglishRpg.Api.Data;
 using EnglishRpg.Api.Dtos;
+using EnglishRpg.Api.Models;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
@@ -33,7 +34,8 @@ public sealed class SessionAuthentication(IOptionsMonitor<AuthenticationSchemeOp
             .FirstOrDefaultAsync(s => s.TokenHash == hash, Context.RequestAborted);
         if (session is null || session.ExpiresAt <= DateTime.UtcNow) return AuthenticateResult.Fail("Expired session");
         var claims = new[] {new Claim(ClaimTypes.NameIdentifier, session.Account.PlayerId.ToString()),
-            new Claim("session", hash), new Claim(ClaimTypes.Name, session.Account.Username)};
+            new Claim("session", hash), new Claim(ClaimTypes.Name, session.Account.Username),
+            new Claim(ClaimTypes.Role, session.Account.Role)};
         return AuthenticateResult.Success(new AuthenticationTicket(new ClaimsPrincipal(
             new ClaimsIdentity(claims, Scheme.Name)), Scheme.Name));
     }

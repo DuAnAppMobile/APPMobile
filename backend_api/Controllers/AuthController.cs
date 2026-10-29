@@ -69,7 +69,7 @@ public sealed class AuthController(AppDbContext db, IPlayerService players) : Co
         db.LoginSessions.Add(new LoginSession {TokenHash = AccountSecurity.HashToken(token),
             AccountId = account.Id, ExpiresAt = expiresAt});
         await db.SaveChangesAsync(ct);
-        return Ok(new { token, expiresAt, player = await players.GetPlayerByIdAsync(account.PlayerId, ct) });
+        return Ok(new { token, expiresAt, role = account.Role, player = await players.GetPlayerByIdAsync(account.PlayerId, ct) });
     }
 
     [HttpPost("logout")]
