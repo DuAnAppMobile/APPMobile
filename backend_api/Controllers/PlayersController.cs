@@ -28,6 +28,20 @@ public class PlayersController(IPlayerService playerService) : ControllerBase
         }
     }
 
+    [HttpGet("{id:int}/profile")]
+    public async Task<ActionResult<PlayerProfileDto>> GetProfile(int id, CancellationToken cancellationToken)
+    {
+        try
+        {
+            var profile = await playerService.GetPlayerProfileAsync(id, cancellationToken);
+            return Ok(profile);
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { message = ex.Message });
+        }
+    }
+
     [HttpPut("{id:int}/target")]
     public async Task<ActionResult<PlayerResponseDto>> SetTarget(int id, [FromBody] SetPlayerTargetRequest request, CancellationToken cancellationToken)
     {
@@ -52,6 +66,29 @@ public class PlayersController(IPlayerService playerService) : ControllerBase
         catch (InvalidOperationException ex)
         {
             return Conflict(new { message = ex.Message });
+        }
+    }
+
+    [HttpPut("{id:int}/avatar")]
+    public async Task<ActionResult<PlayerResponseDto>> SetAvatar(int id, [FromBody] SetPlayerAvatarRequest request, CancellationToken cancellationToken)
+    {
+        if (request is null)
+        {
+            return BadRequest(new { message = "Request body is required." });
+        }
+
+        try
+        {
+            var player = await playerService.SetAvatarAsync(id, request.AvatarId, cancellationToken);
+            return Ok(player);
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { message = ex.Message });
         }
     }
 }

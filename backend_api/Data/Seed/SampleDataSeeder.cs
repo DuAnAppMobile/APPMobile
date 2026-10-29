@@ -17,6 +17,13 @@ public static class SampleDataSeeder
         new() { Name = "ĐH Kinh tế TP.HCM", ShortName = "UEH", ExpRequired = 4500 }
     ];
 
+    private static readonly Badge[] Badges =
+    [
+        new() { Name = "Chiến binh tập sự", Description = "Hoàn thành ải 1.", IconUrl = "badges/novice-warrior.png" },
+        new() { Name = "Bất bại", Description = "Đạt 10/10 câu đúng trong một ải.", IconUrl = "badges/undefeated.png" },
+        new() { Name = "Kẻ chinh phục", Description = "Đánh bại Boss.", IconUrl = "badges/conqueror.png" }
+    ];
+
     private static readonly Stage[] Stages =
     [
         new() { OrderNo = 1, Name = "Ải 1: Khởi đầu", Type = StageType.Normal, QuestionCount = 10, PassCorrect = 8, ExpPerCorrect = 200, BonusExp = 0 },
@@ -36,7 +43,27 @@ public static class SampleDataSeeder
         Q("The ___ on the shelf ___ mine.", ["book / are", "books / is", "books / are", "book / were"], "C", "The plural noun 'books' agrees with 'are'.", "Both the noun and the verb must be plural.", "Use 'books are'."),
         Q("Mai ___ her homework before dinner every day.", ["finish", "finishes", "finished", "finishing"], "B", "The present-simple verb needs the third-person singular ending.", "The subject is 'Mai', and 'every day' describes a routine.", "Use 'finishes'."),
         Q("They ___ to the museum last weekend.", ["go", "goes", "went", "gone"], "C", "The sentence describes a completed event in the past.", "Notice 'last weekend' and use the past form of 'go'.", "The past simple of 'go' is 'went'."),
-        Q("Each student ___ a dictionary.", ["have", "has", "are having", "were having"], "B", "'Each student' is grammatically singular and takes a singular verb.", "Although the noun refers to many people, 'each' makes the subject singular.", "Use 'has'.")
+        Q("Each student ___ a dictionary.", ["have", "has", "are having", "were having"], "B", "'Each student' is grammatically singular and takes a singular verb.", "Although the noun refers to many people, 'each' makes the subject singular.", "Use 'has'."),
+        Q("Does your father ___ near here?", ["works", "work", "worked", "working"], "B", "After the auxiliary 'does', use the base form of the main verb.", "The question already has the third-person singular auxiliary.", "Use 'work' after 'does'."),
+        Q("The Earth ___ around the Sun.", ["move", "moves", "moved", "moving"], "B", "A general scientific fact takes the present simple.", "The subject 'The Earth' is third-person singular.", "Add -s to the verb: 'moves'."),
+        Q("___ you usually ___ to school on foot?", ["Do / go", "Does / go", "Are / going", "Did / went"], "A", "A present-simple question with 'you' uses 'do' and the base verb.", "The word 'usually' describes a habit.", "Use 'Do you usually go'."),
+        Q("Nina ___ her emails before work every day.", ["check", "checks", "checked", "checking"], "B", "A daily routine takes the present simple, with an -s ending for a singular subject.", "Nina is one person, and 'every day' signals a routine.", "Use 'checks'."),
+        Q("My friends ___ spicy food.", ["doesn't like", "don't like", "not likes", "didn't likes"], "B", "A plural subject takes 'do not'; the main verb remains in its base form.", "Use the present-simple negative with the plural subject 'my friends'.", "Use 'don't like'."),
+        Q("He ___ his bike to school yesterday.", ["rides", "ride", "rode", "ridden"], "C", "The completed action happened yesterday, so use the past simple.", "The past simple of 'ride' is irregular.", "Use 'rode'."),
+        Q("We ___ a great film last night.", ["see", "seen", "saw", "sees"], "C", "A completed event at a definite past time takes the past simple.", "The past simple of 'see' is irregular.", "Use 'saw'."),
+        Q("___ Sarah ___ you after class yesterday?", ["Does / call", "Did / called", "Did / call", "Was / call"], "C", "A past-simple question uses 'did' followed by the base form.", "After 'did', do not use the past form of the main verb.", "Use 'Did Sarah call'."),
+        Q("The children ___ in the park until sunset.", ["play", "plays", "played", "playing"], "C", "The action finished at a time in the past.", "The sentence describes what happened before sunset.", "Use the past-simple form 'played'."),
+        Q("I ___ my wallet on the bus yesterday.", ["leave", "leaves", "left", "leaving"], "C", "The time expression 'yesterday' calls for the past simple.", "The past simple of 'leave' is irregular.", "Use 'left'."),
+        Q("There are six ___ on the plate.", ["tomato", "tomatos", "tomatoes", "tomato's"], "C", "Most nouns ending in consonant + o form the plural with -es.", "The number 'six' requires a plural countable noun.", "The plural spelling is 'tomatoes'."),
+        Q("Two ___ are flying over the lake.", ["goose", "gooses", "geese", "geeses"], "C", "The plural of 'goose' is irregular.", "Do not add -s to this irregular noun.", "Use 'geese'."),
+        Q("A ___ is sleeping in the basket.", ["puppy", "puppies", "puppy's", "puppys"], "A", "The article 'a' must be followed by a singular countable noun.", "The sentence describes one animal.", "Use the singular form 'puppy'."),
+        Q("Those ___ need more water.", ["plant", "plants", "plant's", "plant is"], "B", "'Those' is used with plural nouns.", "The demonstrative and noun must both be plural.", "Use 'plants'."),
+        Q("This ___ is very sharp.", ["knives", "knife", "knifes", "knife's"], "B", "'This' refers to one nearby item and takes a singular noun.", "Choose the singular form of the noun.", "Use 'knife'."),
+        Q("Three ___ work in this office.", ["woman", "womans", "women", "woman's"], "C", "The plural of 'woman' is irregular.", "The number 'three' requires a plural noun.", "Use 'women'."),
+        Q("The ___ are playing outside.", ["baby", "babies", "babys", "baby's"], "B", "The plural of a consonant + y noun is formed by changing y to ies.", "The verb 'are' and the article 'The' refer to more than one child.", "Use 'babies'."),
+        Q("We bought two ___ of bread.", ["loaf", "loaves", "loafs", "loafes"], "B", "The plural of 'loaf' changes f to v and adds -es.", "The number 'two' requires the plural form.", "Use 'loaves'."),
+        Q("Every ___ has a different color.", ["leaf", "leaves", "leafs", "leaf's"], "A", "'Every' is followed by a singular noun and takes a singular verb.", "Use the singular form before 'has'.", "Use 'leaf'."),
+        Q("The ___ were full of water.", ["glass", "glasses", "glass's", "glass is"], "B", "The plural of a noun ending in -ss is formed with -es.", "The verb 'were' shows that the subject is plural.", "Use 'glasses'.")
     ];
 
     private static readonly SeedQuestion[] Stage2Questions =
@@ -50,7 +77,27 @@ public static class SampleDataSeeder
         Q("We have known each other ___ ten years.", ["since", "during", "for", "from"], "C", "The phrase gives a duration, not a starting date.", "Use the preposition that goes with a length of time.", "Use 'for' before 'ten years'."),
         Q("The flight arrived ___ the airport at noon.", ["in", "at", "on", "to"], "B", "Use the preposition for arriving at a specific point or place.", "The airport is treated as a specific destination here.", "The standard phrase is 'arrive at the airport'."),
         Q("This is the ___ film I have seen this year.", ["better", "best", "good", "well"], "B", "The sentence ranks the film against all the films seen this year.", "Choose the superlative form of the irregular adjective 'good'.", "The superlative of 'good' is 'best'."),
-        Q("The new library is much ___ than the old one.", ["modern", "more modern", "most modern", "the modernest"], "B", "The word 'than' signals a comparison between two libraries.", "Use 'more' with this multi-syllable adjective in the comparative.", "Use 'more modern'.")
+        Q("The new library is much ___ than the old one.", ["modern", "more modern", "most modern", "the modernest"], "B", "The word 'than' signals a comparison between two libraries.", "Use 'more' with this multi-syllable adjective in the comparative.", "Use 'more modern'."),
+        Q("They have lived in this town ___ 2018.", ["for", "since", "during", "by"], "B", "The present perfect is used for a situation continuing to now, and the blank gives its starting point.", "Use the preposition that introduces a specific starting year.", "Use 'since' before 2018."),
+        Q("I haven't spoken to Leo ___ last Friday.", ["for", "since", "during", "until"], "B", "The present perfect negative describes a period continuing up to now.", "The words after the blank name the point when the period began.", "Use 'since' before a starting time."),
+        Q("We ___ already ___ our lunch.", ["have / eaten", "has / ate", "did / eaten", "are / eat"], "A", "The present perfect is formed with have/has and a past participle.", "With 'we', use 'have'; the past participle of 'eat' is 'eaten'.", "Use 'have already eaten'."),
+        Q("By the time the guests arrived, Mum ___ the table.", ["sets", "has set", "had set", "will set"], "C", "Setting the table happened before another event in the past.", "Use the past perfect for the earlier of two past actions.", "Use 'had set'."),
+        Q("She ___ three emails so far today.", ["sent", "has sent", "had sent", "is sending"], "B", "'So far today' describes a period that is not necessarily finished.", "Use the present perfect for a completed action in a continuing time period.", "Use 'has sent'."),
+        Q("He has worked at the bank ___ six years.", ["since", "for", "during", "from"], "B", "The phrase describes how long the situation has continued.", "Use the preposition that comes before a duration.", "Use 'for' before 'six years'."),
+        Q("I have never ___ a horse before.", ["ride", "rode", "ridden", "riding"], "C", "The present perfect requires a past participle after 'have'.", "The past participle of 'ride' is different from its simple past.", "Use 'ridden'."),
+        Q("When the film started, we ___ our seats.", ["take", "have taken", "had taken", "will take"], "C", "Taking the seats happened before the film started.", "Use the past perfect for the earlier past action.", "Use 'had taken'."),
+        Q("This suitcase is ___ than mine.", ["light", "lighter", "lightest", "the lightest"], "B", "The sentence compares two suitcases.", "Use the comparative form before 'than'.", "Use 'lighter'."),
+        Q("The Nile is one of the ___ rivers in the world.", ["long", "longer", "longest", "most long"], "C", "The phrase 'one of the' is followed by a plural noun and a superlative.", "The sentence ranks the Nile among all rivers.", "Use 'longest'."),
+        Q("This puzzle is ___ than the one we solved yesterday.", ["less difficult", "least difficult", "the less difficult", "difficultest"], "A", "The word 'than' compares two puzzles.", "Use the comparative form; 'difficult' takes 'less' for a negative comparison.", "Use 'less difficult'."),
+        Q("Of all my subjects, chemistry is the ___.", ["challenging", "more challenging", "most challenging", "much challenging"], "C", "The sentence ranks chemistry against all the subjects.", "Use the superlative form of this multi-syllable adjective.", "Use 'most challenging'."),
+        Q("The weather today is much ___ than yesterday.", ["warm", "warmer", "warmest", "the warmest"], "B", "The sentence compares the weather on two days.", "Use the comparative form with 'than'.", "Use 'warmer'."),
+        Q("This is the ___ expensive restaurant in town.", ["less", "least", "little", "lesser"], "B", "The sentence identifies the restaurant with the lowest level of expense in a group.", "Use the superlative form of 'little' before 'expensive'.", "Use 'least expensive'."),
+        Q("We arrived ___ Paris early in the morning.", ["at", "in", "on", "to"], "B", "Use the appropriate preposition with the name of a city after 'arrive'.", "For arrival in a city or country, use the same preposition as in 'arrive ___ France'.", "Use 'in Paris'."),
+        Q("The children are looking forward ___ the school trip.", ["at", "for", "to", "with"], "C", "The expression 'look forward' takes a fixed preposition.", "Recall the phrase used when eagerly anticipating something.", "Use 'looking forward to'."),
+        Q("She is responsible ___ organizing the meeting.", ["of", "for", "to", "with"], "B", "The adjective 'responsible' takes a fixed preposition.", "Recall the phrase 'responsible ___ something'.", "Use 'responsible for'."),
+        Q("The keys are ___ the kitchen table.", ["in", "on", "at", "over"], "B", "The sentence describes keys resting on the surface of a table.", "Use the preposition for contact with a surface.", "Use 'on the kitchen table'."),
+        Q("We walked ___ the tunnel to reach the station.", ["across", "through", "between", "along"], "B", "The route goes from one end of an enclosed passage to the other.", "Choose the preposition used for movement inside and out of an enclosed space.", "Use 'through the tunnel'."),
+        Q("He apologized ___ being late.", ["about", "for", "with", "to"], "B", "The verb 'apologize' takes a fixed preposition before a gerund.", "Recall the pattern 'apologize ___ doing something'.", "Use 'for'.")
     ];
 
     private static readonly SeedQuestion[] Stage3Questions =
@@ -64,7 +111,27 @@ public static class SampleDataSeeder
         Q("If it ___ tomorrow, we will hold the meeting online.", ["rained", "will rain", "rains", "would rain"], "C", "This is a possible future condition.", "The first conditional uses the present simple in its if-clause.", "Use 'rains'."),
         Q("The laptop, ___ I bought last month, has stopped working.", ["who", "where", "which", "whose"], "C", "The relative pronoun refers to a thing and is the object of the clause.", "Choose the object relative pronoun for an inanimate noun.", "Use 'which'."),
         Q("The old bridge ___ next year.", ["will replace", "will be replaced", "is replacing", "has replaced"], "B", "The bridge receives the action, and the time is in the future.", "Use will + be + past participle for the future passive.", "Use 'will be replaced'."),
-        Q("If she ___ the instructions carefully, she would not have made that mistake.", ["read", "had read", "would read", "has read"], "B", "The result clause refers to a past outcome that did not happen.", "Use the past perfect in the if-clause of a third conditional.", "Use 'had read'.")
+        Q("If she ___ the instructions carefully, she would not have made that mistake.", ["read", "had read", "would read", "has read"], "B", "The result clause refers to a past outcome that did not happen.", "Use the past perfect in the if-clause of a third conditional.", "Use 'had read'."),
+        Q("If you heat ice, it ___.", ["melted", "melts", "will melt", "would melt"], "B", "This sentence states a general fact.", "Use the zero conditional: present simple in both clauses.", "Use 'melts'."),
+        Q("If I were in your position, I ___ the offer.", ["accept", "will accept", "would accept", "would have accepted"], "C", "The speaker is imagining an unreal present situation.", "Use the second conditional result form: would + base verb.", "Use 'would accept'."),
+        Q("If the team trains hard, it ___ the final.", ["reaches", "will reach", "would reach", "would have reached"], "B", "This is a possible future condition.", "Use the first conditional: present simple in the if-clause and will + base verb in the result.", "Use 'will reach'."),
+        Q("If he had checked the map, he ___ lost.", ["wouldn't get", "won't get", "wouldn't have got", "didn't get"], "C", "The condition and result both refer to an unreal past situation.", "Use would + have + past participle in the third-conditional result clause.", "Use 'wouldn't have got'."),
+        Q("Unless you ___ now, you'll miss the bus.", ["leave", "will leave", "left", "would leave"], "A", "'Unless' introduces a condition in a possible future situation.", "Use the present simple, not 'will', after 'unless'.", "Use 'leave'."),
+        Q("If she had more free time, she ___ painting lessons.", ["takes", "will take", "would take", "would have taken"], "C", "Having more free time is an unreal present condition.", "Use the second conditional in the result clause.", "Use 'would take'."),
+        Q("The engineer ___ designed this bridge won an award.", ["which", "who", "where", "whose"], "B", "The relative pronoun refers to a person and is the subject of 'designed'.", "Choose the subject relative pronoun for a person.", "Use 'who'."),
+        Q("The village ___ my grandparents were born is near the coast.", ["who", "whose", "where", "which"], "C", "The missing word refers to the place where the grandparents were born.", "Use a relative adverb meaning 'in which'.", "Use 'where'."),
+        Q("I met a writer ___ novels have been translated into several languages.", ["who", "whose", "which", "where"], "B", "The novels belong to the writer.", "Use the possessive relative pronoun before a noun.", "Use 'whose'."),
+        Q("The phone ___ I bought last week has a cracked screen.", ["who", "where", "which", "whose"], "C", "The relative pronoun refers to a thing and is the object of 'bought'.", "Choose an object relative pronoun for an inanimate noun.", "Use 'which'."),
+        Q("My aunt, ___ lives in Canada, is visiting us.", ["which", "who", "whose", "where"], "B", "The non-defining relative clause refers to a person.", "Choose a subject relative pronoun for a person; the commas mark extra information.", "Use 'who'."),
+        Q("The documents ___ were sent yesterday have arrived.", ["who", "where", "whose", "that"], "D", "The relative pronoun refers to things and is the subject of the clause.", "Choose a subject relative pronoun that can introduce a defining clause about things.", "Use 'that'."),
+        Q("The woman to ___ I sent the parcel thanked me.", ["which", "whose", "whom", "where"], "C", "The relative pronoun refers to a person and follows the preposition 'to'.", "In formal English, use the object form of the relative pronoun after a preposition.", "Use 'whom'."),
+        Q("The café ___ we first met has closed.", ["who", "whose", "where", "which"], "C", "The missing word refers to the place where the meeting happened.", "Use a relative adverb meaning 'at which'.", "Use 'where'."),
+        Q("The results ___ tomorrow morning.", ["announce", "will announce", "will be announced", "are announcing"], "C", "The results receive the action, which will happen in the future.", "Form the future passive with will + be + past participle.", "Use 'will be announced'."),
+        Q("English ___ in many countries.", ["speaks", "is spoken", "spoke", "is speaking"], "B", "English receives the action, and the sentence states a general fact.", "Form the present simple passive with is + past participle.", "Use 'is spoken'."),
+        Q("The old stadium ___ at the moment.", ["renovates", "is renovating", "is being renovated", "has renovated"], "C", "The stadium receives an action that is in progress now.", "Use the present continuous passive: is being + past participle.", "Use 'is being renovated'."),
+        Q("The new software ___ before launch.", ["must test", "must be tested", "must have testing", "must be testing"], "B", "The software receives the action, and the sentence expresses an obligation.", "Use a passive form after the modal 'must'.", "Use 'must be tested'."),
+        Q("The emails ___ before I arrived.", ["had sent", "had been sent", "were sending", "have been sent"], "B", "The emails received the action before another past event.", "Use the past perfect passive: had been + past participle.", "Use 'had been sent'."),
+        Q("The missing painting ___ by the police so far.", ["has not found", "has not been found", "was not finding", "is not find"], "B", "'So far' calls for the present perfect, and the painting receives the action.", "Form the present perfect passive with has/have + been + past participle.", "Use 'has not been found'.")
     ];
 
     private static readonly SeedQuestion[] BossQuestions =
@@ -138,6 +205,13 @@ public static class SampleDataSeeder
             .ToListAsync(cancellationToken);
         var universityShortNames = existingUniversityShortNames.ToHashSet(StringComparer.OrdinalIgnoreCase);
         dbContext.Universities.AddRange(Universities.Where(university => !universityShortNames.Contains(university.ShortName)));
+        await dbContext.SaveChangesAsync(cancellationToken);
+
+        var existingBadgeNames = await dbContext.Badges
+            .Select(badge => badge.Name)
+            .ToListAsync(cancellationToken);
+        var badgeNames = existingBadgeNames.ToHashSet(StringComparer.OrdinalIgnoreCase);
+        dbContext.Badges.AddRange(Badges.Where(badge => !badgeNames.Contains(badge.Name)));
         await dbContext.SaveChangesAsync(cancellationToken);
 
         var existingStages = await dbContext.Stages
@@ -224,7 +298,7 @@ public static class SampleDataSeeder
         int stageOrder,
         IReadOnlyList<SeedQuestion> questions)
     {
-        var expectedCount = stageOrder == 4 ? 60 : 10;
+        var expectedCount = stageOrder == 4 ? 60 : 30;
         if (questions.Count != expectedCount)
         {
             throw new InvalidOperationException(

@@ -11,6 +11,9 @@ public sealed class StageService(AppDbContext dbContext) : IStageService
     private static readonly TimeSpan BossAttemptDuration = TimeSpan.FromMinutes(30);
     private const int BossQuestionCount = 15;
     private const int NextHintExpCost = 60;
+    private const string NoviceWarriorBadgeName = "Chiến binh tập sự";
+    private const string UndefeatedBadgeName = "Bất bại";
+    private const string ConquerorBadgeName = "Kẻ chinh phục";
 
     public async Task<IReadOnlyList<StageResponse>> GetStagesAsync(int playerId, CancellationToken cancellationToken)
     {
@@ -132,8 +135,8 @@ public sealed class StageService(AppDbContext dbContext) : IStageService
                 $"Stage {stageId} requires {stage.QuestionCount} questions, but only {questionPool.Count} are available.");
         }
 
+        Shuffle(questionPool);
         var selectedQuestions = questionPool
-            .OrderBy(question => question.OrderNo)
             .Take(stage.QuestionCount)
             .ToList();
         var attempt = new StageAttempt
@@ -424,6 +427,22 @@ public sealed class StageService(AppDbContext dbContext) : IStageService
         var player = await dbContext.Players
             .FirstAsync(item => item.Id == attempt.PlayerId, cancellationToken);
         player.TotalExp += attempt.ExpEarned;
+
+        if (attempt.StageId == 1 && passed)
+        {
+            await AwardBadgeIfNotOwnedAsync(attempt.PlayerId, NoviceWarriorBadgeName, cancellationToken);
+        }
+
+        if (attempt.AttemptQuestions.Count == 10 && attempt.CorrectCount == 10)
+        {
+            await AwardBadgeIfNotOwnedAsync(attempt.PlayerId, UndefeatedBadgeName, cancellationToken);
+        }
+
+        if (attempt.StageId == 4 && passed)
+        {
+            await AwardBadgeIfNotOwnedAsync(attempt.PlayerId, ConquerorBadgeName, cancellationToken);
+        }
+
         await dbContext.SaveChangesAsync(cancellationToken);
 
         if (isBoss)
@@ -470,6 +489,32 @@ public sealed class StageService(AppDbContext dbContext) : IStageService
                 player.TotalExp,
                 incorrectQuestions),
             null);
+    }
+
+    private async Task AwardBadgeIfNotOwnedAsync(
+        int playerId,
+        string badgeName,
+        CancellationToken cancellationToken)
+    {
+        var badgeId = await dbContext.Badges
+            .Where(badge => badge.Name == badgeName)
+            .Select(badge => (int?)badge.Id)
+            .FirstOrDefaultAsync(cancellationToken)
+            ?? throw new InvalidOperationException($"Badge '{badgeName}' was not found.");
+
+        var alreadyOwned = await dbContext.PlayerBadges.AnyAsync(
+            playerBadge => playerBadge.PlayerId == playerId && playerBadge.BadgeId == badgeId,
+            cancellationToken);
+        if (alreadyOwned)
+        {
+            return;
+        }
+
+        dbContext.PlayerBadges.Add(new PlayerBadge
+        {
+            PlayerId = playerId,
+            BadgeId = badgeId
+        });
     }
 
     public async Task<AttemptSummaryResult> GetAttemptSummaryAsync(
