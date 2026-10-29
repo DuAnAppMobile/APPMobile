@@ -37,6 +37,13 @@ namespace EnglishRpg.Api.Migrations
                     b.Property<int>("PlayerId")
                         .HasColumnType("INTEGER");
 
+                    b.Property<string>("Role")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(20)
+                        .HasColumnType("TEXT")
+                        .HasDefaultValue("User");
+
                     b.Property<string>("Username")
                         .IsRequired()
                         .HasMaxLength(32)
