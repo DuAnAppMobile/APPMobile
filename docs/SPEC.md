@@ -1,53 +1,45 @@
-# SPEC.md: App luyện thi tiếng Anh gamified (đồ án Lập trình di động)
+# SPEC.md: English Quest – ứng dụng luyện tiếng Anh gamified
 
-> Cập nhật tài khoản theo yêu cầu người dùng: đăng ký/đăng nhập với username + mật khẩu,
-> bắt đầu tiến độ mới, không nhập dữ liệu cũ theo tên. Phiên bearer ngẫu nhiên có hạn,
-> server chỉ lưu hash token; password dùng ASP.NET Core PasswordHasher. Bảo vệ tất cả
-> API và kiểm tra quyền theo player/attempt. Sổ ôn luyện chuyển sang database máy chủ.
-> Database mặc định mới: english-quest-accounts.db (file cũ giữ nguyên, không dùng).
-> Đồng bộ yêu cầu các app kết nối cùng backend/database. Chưa triển khai host công khai;
-> chưa có quên/đổi mật khẩu hoặc nhớ phiên sau khi tắt app. Quyết định cũ trái với cập nhật này được thay thế.
-
-> Cập nhật theo yêu cầu người dùng 16/10/2026: bổ sung Ôn luyện (trước đây ngoài phạm vi).
-> Bản hiện tại gồm 4 chủ đề, 24 câu riêng, nhắc kiến thức, luyện tổng hợp 10 câu,
-> chấm tại server, giải thích tiếng Việt và tổng kết/ôn lại câu sai. Không tính EXP,
-> không thay đổi tiến độ ải, không dùng ngân hàng Boss. Sổ theo kết quả gần nhất
-> được lưu cục bộ theo API + playerId; chưa đồng bộ thiết bị và không tiếp tục lượt dở.
-> Lời thoại Alime: 20 câu sai và 12 câu đúng, shuffle-bag chống lặp, ổn định khi rebuild.
-> Các mục bên dưới ghi Ôn luyện ngoài phạm vi là quyết định cũ, được cập nhật này thay thế.
+> Tài liệu này mô tả phiên bản đang có trong repository. Ứng dụng Flutter gọi ASP.NET
+> Core Web API; backend dùng SQLite tại `backend_api/english-quest-accounts.db`. Người
+> chơi đăng ký/đăng nhập bằng username và mật khẩu; API được bảo vệ bằng session bearer
+> token, còn thao tác quản trị câu hỏi yêu cầu role `Admin`. Nội dung Ôn luyện hiện được
+> cung cấp riêng với nội dung ải/Boss. Backend hiện phục vụ local/demo; chưa có host
+> công khai. Ứng dụng giữ token trong bộ nhớ, vì vậy cần đăng nhập lại sau khi khởi động
+> lại app.
 
 # 1. Tổng quan
 
-- **Sản phẩm:** App Android luyện thi tiếng Anh, chơi như RPG nhẹ.
-- **Người dùng chính:** Học sinh lớp 12 (sinh viên nằm ngoài phạm vi).
-- **Ý tưởng cốt lõi:** Chọn trường mục tiêu → app đổi thành mức EXP cần đạt → vượt "ải" để nhận EXP → đủ EXP thì "mở khóa" trường.
-- **Nội dung:** Câu hỏi trắc nghiệm lấy từ đề thi THPT các năm trước, soạn sẵn trong database.
-- **AI Mentor:** Gợi ý (Hint 1, Hint 2) soạn sẵn, không gọi AI thật khi chạy.
-- **Phạm vi:** Đồ án môn học, demo được trong khoảng 5 tuần, nhóm 2 người.
-- **Ngoài phạm vi (đã cắt):** bảng xếp hạng, phần Ôn luyện (chủ đề ngữ pháp), đăng ký email/mật khẩu, đăng nhập Google, nhóm người dùng sinh viên, AI sinh câu hỏi/hint theo thời gian thực.
+- **Sản phẩm:** Ứng dụng Flutter học tiếng Anh theo mô hình RPG nhẹ; hiện hỗ trợ Android và Flutter Web để chạy thử.
+- **Người dùng:** Người chơi đăng ký bằng tài khoản (username) và mật khẩu; mỗi tài khoản có hồ sơ người chơi riêng. Tài khoản thông thường có role `User`; role `Admin` dành cho chức năng quản trị câu hỏi.
+- **Ý tưởng game:** Chọn trường mục tiêu → tích lũy EXP qua các ải → đạt ngưỡng EXP của trường để mở khóa trường mục tiêu.
+- **Nội dung chính:** Câu hỏi trắc nghiệm tiếng Anh trong các ải thường và ngân hàng câu hỏi Boss; dữ liệu ải/trường/câu hỏi được lưu ở backend.
+- **Ôn luyện:** Có 4 chủ đề ngữ pháp (các thì, câu bị động, mệnh đề quan hệ, câu điều kiện), tổng cộng 24 câu. Backend chấm câu trả lời, trả giải thích và lưu kết quả gần nhất của mỗi câu cho từng người chơi; không cộng EXP, không tác động tiến độ ải.
+- **AI Mentor:** Hint 1, Hint 2 và giải thích được biên soạn sẵn; không gọi mô hình AI khi chạy.
+- **Phạm vi triển khai:** Dự án học tập/demo chạy với backend local; các ứng dụng kết nối cùng backend để dùng chung dữ liệu.
+- **Ngoài phạm vi:** Bảng xếp hạng, đăng nhập Google, nhóm người dùng sinh viên, AI sinh câu hỏi/hint theo thời gian thực, quên/đổi mật khẩu và lưu phiên đăng nhập qua lần khởi động ứng dụng.
 
-**Quy tắc game đã chốt**
+**Quy tắc game**
 
 | Mục | Giá trị |
 |---|---|
 | Ải thường | 3 ải, mỗi ải 10 câu |
-| Qua ải | Đúng ≥ 8/10 thì được tính là qua ải (mở ải kế). Không đạt (< 8 đúng) **vẫn nhận EXP theo công thức** |
+| Qua ải thường | Đúng ≥ 8/10 thì được tính là qua ải và mở ải kế. Không đạt vẫn nhận EXP theo công thức. |
 | EXP mỗi câu đúng | Ải 1 = 200, ải 2 = 300, ải 3 = 400 |
-| Sai 1 câu | 0 EXP (không trừ) |
-| Hint | Hint 1 free (tự hiện khi trả lời sai, không trừ EXP). Hint 2 (bấm "Xem tiếp") **-60 EXP**, trừ vào tổng EXP của ải. EXP của một ải **chặn tối thiểu ở 0** |
-| Trả lời | Sai lần đầu là sai luôn (hint chỉ để học) |
-| Boss | 15 câu **random mỗi lần chơi** (lấy ngẫu nhiên từ ngân hàng khoảng 60 câu hỏi Boss), 30 phút tính tổng cả ải, thắng khi đúng ≥ 13 (hết giờ hoặc đúng < 13 là thua). **Thắng lần đầu nhận 2000 EXP**; chơi lại không tính điểm (chỉ ôn tập). Không có EXP theo từng câu, không có Mentor/hint. **Không hiện đúng/sai từng câu khi đang chơi; đáp án công bố ở màn kết quả** |
-| Mở ải | **Tuần tự**: qua ải N mới mở ải N+1 |
-| Mở Boss | Hoàn thành 3 ải thường (không xét EXP) |
-| Chơi lại | Ải thường: có EXP. Boss: không tính điểm (chỉ ôn tập) |
-| Thoát giữa ải | Chỉ áp dụng ải thường: giữ tiến độ, 15 phút tính từ lần tương tác cuối (trả lời hoặc xem hint). Quá hạn thì mất. Boss: thoát giữa chừng thì chơi lại từ đầu |
-| Kết thúc ải (finish) | Ải thường: phải trả lời đủ 10 câu mới kết thúc được. Boss: kết thúc lúc nào cũng được (câu chưa trả lời tính là sai) |
-| Mất mạng | Hiện thông báo giữa màn hình |
+| Câu sai | 0 EXP, không bị trừ EXP |
+| Hint | Hint 1 miễn phí, tự hiện khi trả lời sai ở ải thường. Hint 2 xuất hiện khi chọn “Xem tiếp”, trừ 60 EXP vào tổng EXP của lượt; tổng EXP lượt không thấp hơn 0. |
+| Trả lời | Mỗi câu chỉ trả lời một lần; hint hỗ trợ học sau khi trả lời, không đổi kết quả đúng/sai. |
+| Boss | Mỗi lượt chọn ngẫu nhiên 15 câu từ ngân hàng Boss (khoảng 60 câu); giới hạn 30 phút cho toàn lượt; thắng khi đúng ≥ 13/15. Thắng lần đầu nhận 2000 EXP; các lần thắng sau không nhận thêm. Không có EXP từng câu hoặc hint. Đáp án công bố ở kết quả, không tiết lộ đúng/sai trong lúc chơi. |
+| Mở ải | Tuần tự: qua ải N mới mở ải N+1. Boss mở sau khi hoàn thành 3 ải thường. |
+| Chơi lại | Ải thường vẫn có thể nhận EXP theo kết quả; Boss chỉ có thưởng một lần. |
+| Lượt thường dở | Có thể tiếp tục trong vòng 15 phút kể từ tương tác gần nhất; hết hạn thì không được tiếp tục. |
+| Lượt Boss dở | Không giữ tiến độ; bắt đầu lại sẽ tạo lượt Boss mới. |
+| Kết thúc lượt | Ải thường cần trả lời đủ 10 câu; Boss có thể kết thúc bất cứ lúc nào, câu bỏ trống tính là sai. |
 
-**Danh sách trường và EXP mục tiêu**
+**Trường mục tiêu và EXP yêu cầu**
 
 | Trường | EXP |
-|---|---|
+|---|---:|
 | ĐH Quốc gia Hà Nội (VNU) | 10000 |
 | ĐH Quốc gia TP.HCM (VNU-HCM) | 10000 |
 | ĐH Bách khoa Hà Nội (HUST) | 9000 |
@@ -59,143 +51,208 @@
 
 # 2. Tính năng
 
-**Module A: Người chơi**
-- [Must] Nhập tên để vào app, tiến độ lưu theo tên.
-- [Must] Chọn trường mục tiêu từ danh sách 8 trường; **mục tiêu là cố định**, không đổi sau khi chọn.
-- [Must] Hiển thị tổng EXP và tiến độ tới EXP mục tiêu.
-- [Must] Khi đủ EXP, trường mục tiêu chuyển sang trạng thái "đã mở khóa".
+**Module A: Đăng ký/Đăng nhập bằng tài khoản và mật khẩu**
+- [Must] Đăng ký bằng username và mật khẩu; username được chuẩn hóa chữ thường, dài 3–32 ký tự, chỉ gồm chữ không dấu, số và `_`.
+- [Must] Mật khẩu dài 10–128 ký tự, có ít nhất một chữ cái và một chữ số.
+- [Must] Đăng ký tạo tài khoản và hồ sơ Players liên kết, sau đó cấp phiên đăng nhập.
+- [Must] Đăng nhập bằng cùng username/mật khẩu; xác minh mật khẩu bằng ASP.NET Core PasswordHasher, không lưu mật khẩu rõ.
+- [Must] Token phiên bearer ngẫu nhiên có hạn 7 ngày; backend chỉ lưu SHA-256 hash của token. App giữ token trong bộ nhớ và gắn vào các yêu cầu sau đăng nhập.
+- [Must] Role mặc định là `User`; role `Admin` được dùng để kiểm soát endpoint quản trị.
+- [Must] Có thể đăng xuất để thu hồi phiên hiện tại. Tài khoản bị tạm khóa 5 phút sau 5 lần đăng nhập sai liên tiếp; endpoint đăng nhập/đăng ký có giới hạn tốc độ.
 
-**Module B: Ải thường**
-- [Must] 3 ải, mỗi ải 10 câu trắc nghiệm, độ khó tăng dần theo ải.
-- [Must] Qua ải khi đúng ≥ 8/10 (mở ải kế).
-- [Must] Không đạt (< 8 đúng) vẫn nhận EXP theo công thức (đúng +EXP theo ải, Hint 2 -60, chặn tối thiểu 0); chỉ không được mở ải kế.
-- [Must] Phải trả lời đủ 10 câu mới kết thúc được ải.
-- [Must] EXP mỗi câu đúng theo ải: ải 1 = 200, ải 2 = 300, ải 3 = 400.
-- [Must] Mỗi câu chỉ trả lời một lần; sai là sai luôn.
-- [Must] Mở ải tuần tự: qua ải N mới mở ải N+1.
-- [Must] Chơi lại ải đã qua vẫn nhận EXP.
-- [Should] Thoát giữa chừng: giữ tiến độ, 15 phút tính từ lần tương tác cuối (trả lời hoặc xem hint), quá hạn thì mất.
+**Module B: Hồ sơ người chơi và trường mục tiêu**
+- [Must] Mỗi tài khoản gắn với một hồ sơ Player; hồ sơ hiển thị tên tài khoản, Avatar, tổng EXP và trường mục tiêu.
+- [Must] Chọn trường mục tiêu từ danh sách 8 trường; mục tiêu không thể đổi sau khi đã chọn.
+- [Must] Hiển thị tiến độ EXP tới ngưỡng trường và trạng thái mở khóa khi tổng EXP đạt yêu cầu.
+- [Must] Người chơi có thể cập nhật Avatar bằng `AvatarId`.
 
-**Module C: Hint và tổng kết**
-- [Must] Hint 1 (gợi ý hướng suy nghĩ) và Hint 2 (gần như lộ đáp án), soạn sẵn.
-- [Must] Hint 1 free: tự hiện khi trả lời sai ở ải thường, không trừ EXP.
-- [Must] Hint 2: chỉ hiện khi người chơi bấm "Xem tiếp", trừ 60 EXP vào tổng EXP của ải.
-- [Must] EXP của một ải không xuống dưới 0.
-- [Must] Màn tổng kết cuối ải: số đúng/sai, EXP nhận được (kể cả khi chưa đạt), danh sách câu sai kèm hint để xem lại.
+**Module C: Ải thường**
+- [Must] Có 3 ải, mỗi ải 10 câu trắc nghiệm; độ khó tăng dần theo ải.
+- [Must] Qua ải khi đúng ≥ 8/10; chỉ khi qua mới mở ải kế.
+- [Must] Không đạt vẫn nhận EXP tính theo số câu đúng, trừ khoản Hint 2 đã dùng; EXP của lượt chặn ở 0.
+- [Must] Cần trả lời đủ 10 câu mới kết thúc lượt; câu chỉ được trả lời một lần.
+- [Must] EXP mỗi câu đúng lần lượt là 200, 300, 400 theo ải.
+- [Must] Có thể tiếp tục lượt dở còn hạn; người chơi có thể chọn bắt đầu lại, lượt cũ bị hết hạn và không trao EXP.
 
-**Module D: Boss**
-- [Must] Mở sau khi hoàn thành 3 ải thường.
-- [Must] Mỗi lần chơi, server chọn ngẫu nhiên 15 câu từ ngân hàng câu hỏi Boss (khoảng 60 câu).
-- [Must] Đồng hồ đếm ngược 30 phút cho cả ải, không có Mentor/hint.
-- [Must] Không hiện đúng/sai từng câu khi đang chơi; đáp án đúng chỉ công bố ở màn kết quả sau khi kết thúc.
-- [Must] Kết thúc (finish) lúc nào cũng được; câu chưa trả lời tính là sai.
-- [Must] Thoát giữa chừng thì chơi lại từ đầu (không giữ tiến độ).
-- [Must] Thắng khi đúng ≥ 13/15; thắng lần đầu nhận thưởng cố định 2000 EXP. Không có EXP theo từng câu.
-- [Must] Hết giờ hoặc đúng < 13 là thua; thua có thể chơi lại.
-- [Must] Chơi lại Boss không tính điểm (chỉ ôn tập).
+**Module D: Hint và tổng kết**
+- [Must] Hint 1 và Hint 2 được lưu sẵn cùng câu hỏi.
+- [Must] Hint 1 tự hiển thị miễn phí sau khi trả lời sai ở ải thường.
+- [Must] Hint 2 chỉ được cấp khi người chơi yêu cầu; trừ 60 EXP trong tính toán tổng EXP của lượt.
+- [Must] Kết quả lượt thường gồm số đúng/sai, trạng thái qua/thua, EXP nhận, tổng EXP mới và phần xem lại câu sai kèm hint/giải thích.
+- [Must] Câu trả lời, kết quả và EXP được xử lý ở server; client không nhận đáp án đúng trước thời điểm được phép.
 
-**Module E: EXP và trường mục tiêu**
-- [Must] Server tính EXP theo công thức; client chỉ hiển thị.
-- [Must] Bảng quy đổi trường → EXP lưu trong database (8 trường).
+**Module E: Boss**
+- [Must] Chỉ mở Boss sau khi hoàn thành cả 3 ải thường.
+- [Must] Server chọn ngẫu nhiên 15 câu từ ngân hàng câu hỏi Boss ở mỗi lượt.
+- [Must] Thời gian tối đa 30 phút do server quản lý; không có Mentor/hint.
+- [Must] Trong lượt Boss, API chỉ xác nhận đã ghi nhận câu trả lời, không trả đúng/sai. Màn kết quả mới công bố đáp án.
+- [Must] Có thể kết thúc bất kỳ lúc nào; câu chưa trả lời được tính là sai. Thắng khi đúng ≥ 13 câu.
+- [Must] Thưởng cố định 2000 EXP cho lần thắng đầu tiên; lượt thắng sau không nhận thưởng.
+- [Must] Lượt Boss đang dở không được phục hồi; lần bắt đầu tiếp theo tạo lượt mới.
 
-**Module F: Hệ thống**
-- [Should] Thông báo giữa màn hình khi mất mạng/không gọi được server.
+**Module F: Ôn luyện**
+- [Must] Có 4 chủ đề: các thì cơ bản, câu bị động, mệnh đề quan hệ và câu điều kiện; tổng cộng 24 câu.
+- [Must] Có thể xem bài nhắc kiến thức và danh sách câu hỏi theo chủ đề hoặc toàn bộ ngân hàng Ôn luyện.
+- [Must] Đáp án đúng và giải thích chỉ được trả về sau khi gửi câu trả lời.
+- [Must] Lưu kết quả mới nhất theo người chơi và câu hỏi trên backend; không cộng EXP và không làm thay đổi tiến độ ải/Boss.
 
-**Nice (chỉ chỉnh bóng, không phải tính năng mới)**
-- [Nice] Hiệu ứng nhẹ khi qua ải, thắng Boss, mở khóa trường (bạn phụ trách UI làm nếu còn thời gian).
+**Module G: Hồ sơ cá nhân**
+- [Must] Hiển thị Avatar, tổng EXP và danh sách Huy hiệu (Badges) đã nhận.
+- [Must] Huy hiệu được trao tự động khi hoàn tất điều kiện trong game. Các điều kiện hiện có gồm: qua ải 1 (“Chiến binh tập sự”), đạt 10/10 câu trong một lượt 10 câu (“Bất bại”), và thắng Boss (“Kẻ chinh phục”).
+- [Must] Huy hiệu được lưu theo quan hệ người chơi–huy hiệu; mỗi huy hiệu chỉ xuất hiện một lần trong hồ sơ.
+- [Must] Người chơi có thể cập nhật Avatar; giá trị mặc định là `default_avatar`.
+
+**Module H: Lịch sử làm bài**
+- [Must] Xem lại các lượt chơi đã hoàn thành, sắp xếp lượt mới nhất trước.
+- [Must] Mỗi mục lịch sử hiển thị tên ải, trạng thái Pass/Fail, số câu đúng trên tổng số câu, EXP nhận và thời điểm chơi.
+- [Must] Lịch sử không bao gồm lượt đang chơi hoặc lượt hết hạn; dữ liệu lấy từ các lượt ải/Boss đã hoàn tất.
+
+**Module I: Quản lý câu hỏi – Admin**
+- [Must] Phân quyền theo `Role`: chỉ tài khoản có role `Admin` được truy cập API quản trị câu hỏi; tài khoản User bị từ chối.
+- [Must] Admin có thể xem danh sách/chi tiết câu hỏi, tạo mới, cập nhật và xóa câu hỏi.
+- [Must] Dữ liệu câu hỏi quản lý gồm ải, nội dung, bốn lựa chọn, đáp án đúng, hai hint và giải thích.
+- [Must] Không cho xóa câu hỏi đã được tham chiếu bởi lượt chơi/câu trả lời.
+
+**Tính năng hệ thống**
+- [Must] Các API yêu cầu xác thực dùng `Authorization: Bearer <token>`; server kiểm tra session còn hạn và quyền sở hữu Player/lượt chơi.
+- [Should] Hiển thị thông báo rõ ràng khi mất kết nối hoặc server không phản hồi.
+- [Nice] Hiệu ứng nhẹ khi qua ải, thắng Boss hoặc mở khóa trường; không làm thay đổi luật chơi.
 
 # 3. Kiến trúc kỹ thuật
 
-- **Frontend:** Flutter + Dart, build Android; test nhanh trên Flutter web (máy yếu).
-- **Backend:** ASP.NET Core Web API (REST, JSON).
-- **Database:** SQL Server, truy cập qua Entity Framework Core.
-- **Luồng:** Flutter → HTTP → Web API → SQL Server.
-- **Nguyên tắc:**
-  - Server chấm đúng/sai và tính EXP; client không nhận đáp án đúng trước khi trả lời.
-  - Server giữ giờ bắt đầu và giờ hết hạn của lượt chơi (Boss 30 phút; ải thường 15 phút giữ tiến độ), không tin giờ của client.
-  - Hint chỉ được gửi kèm kết quả khi trả lời sai ở ải thường (Boss không bao giờ gửi hint), để server trừ EXP đúng.
-  - Boss: server không trả đúng/sai từng câu khi đang chơi; đáp án chỉ trả về sau khi `finish`.
-  - Dữ liệu câu hỏi, hint, trường nạp bằng script seed.
-- **Cấu trúc code (để chia việc 2 người):**
-  - Flutter: tách riêng thư mục giao diện (screens/widgets) khỏi logic và gọi API (services/models). Bạn UI chỉ sửa phần giao diện.
-  - Backend: Controllers / Services / Models / Data.
-- **CORS:** bật cho origin của Flutter web khi test.
-- **Chạy lúc chấm:** backend chạy localhost trên máy của bạn (đã chốt).
+- **Frontend:** Flutter + Dart; ứng dụng Android và cấu hình chạy thử trên Flutter Web.
+- **Backend:** ASP.NET Core Web API, REST/JSON, Entity Framework Core.
+- **Database hiện dùng:** SQLite, file `backend_api/english-quest-accounts.db` (connection string mặc định `Data Source=english-quest-accounts.db`, chạy backend từ thư mục `backend_api`).
+- **Luồng:** Flutter → HTTP/JSON → ASP.NET Core Web API → Entity Framework Core → SQLite.
+- **Xác thực:** Session Bearer Token. Đăng ký/đăng nhập tạo token ngẫu nhiên 32 byte biểu diễn dạng hex; token gửi cho client, database chỉ lưu hash SHA-256. Phiên hết hạn sau 7 ngày; logout xóa phiên hiện tại.
+- **Ủy quyền:** Role-based Authorization. Tài khoản có role `User` hoặc `Admin`; AdminController yêu cầu role Admin. Bộ lọc sở hữu kiểm tra các route có `playerId`, `id`, `attemptId` và yêu cầu start để người dùng không truy cập dữ liệu người chơi khác.
+- **Bảo vệ đăng nhập:** PasswordHasher của ASP.NET Core với cấu hình 600.000 iterations; username duy nhất; sau 5 lần nhập sai liên tiếp tài khoản bị khóa 5 phút; giới hạn 20 yêu cầu auth/phút theo địa chỉ IP.
+- **Chính sách API:** Các controller mặc định yêu cầu xác thực; đăng ký và đăng nhập cho phép truy cập ẩn danh. Backend yêu cầu HTTPS cho `/api` ngoài môi trường Development. CORS được cấu hình cho localhost Flutter Web.
+- **Nguyên tắc gameplay:** Server chấm câu trả lời và tính EXP; đáp án ải thường không gửi trước khi trả lời. Với Boss, không trả đúng/sai trong lượt chơi; server giữ thời gian hết hạn, danh sách câu của lượt và kết quả.
+- **Ôn luyện:** Nội dung được định nghĩa riêng trong PracticeBank, không dùng ngân hàng câu hỏi ải/Boss; kết quả gần nhất được lưu trong SQLite.
+- **Tổ chức backend:** `Controllers` xử lý HTTP, `Services` chứa nghiệp vụ, `Models` định nghĩa entity, `Data/AppDbContext` cấu hình EF Core.
+- **Cấu hình chạy:** Mặc định database provider là SQLite. Backend demo chạy local; URL API của app có thể được cấu hình bằng `API_BASE_URL`.
 
 # 4. Database schema (dạng text)
 
-```
+Các bảng dưới đây mô tả entity và quan hệ hiện có trong EF Core/SQLite. PK/FK và giới hạn độ dài được cấu hình trong `AppDbContext`.
+
+```text
+Accounts
+  Id (PK), Username (unique, tối đa 32),
+  PasswordHash (hash, tối đa 512), Role (mặc định 'User', tối đa 20),
+  PlayerId (FK -> Players, unique), FailedLogins, LockedUntil (nullable)
+
+LoginSessions
+  TokenHash (PK, SHA-256 của bearer token, tối đa 64 ký tự hex),
+  AccountId (FK -> Accounts), ExpiresAt
+
 Universities
   Id (PK), Name, ShortName, ExpRequired
 
 Players
-  Id (PK), Name (unique), TargetUniversityId (FK -> Universities, nullable),
-  TotalExp, CreatedAt
+  Id (PK), Name (unique), AvatarId (mặc định 'default_avatar'),
+  TargetUniversityId (FK -> Universities, nullable), TotalExp, CreatedAt
+
+Badges
+  Id (PK), Name, Description, IconUrl
+
+PlayerBadges
+  PlayerId (FK -> Players), BadgeId (FK -> Badges)
+  PK ghép (PlayerId, BadgeId)
 
 Stages
   Id (PK), OrderNo, Name, Type ('Normal' | 'Boss'),
-  QuestionCount, PassCorrect, TimeLimitSeconds (null với ải thường),
-  ExpPerCorrect (200 / 300 / 400 với ải thường, 0 với Boss),
-  BonusExp (0 với ải thường, 2000 với Boss)
+  QuestionCount, PassCorrect, TimeLimitSeconds,
+  ExpPerCorrect, BonusExp
 
 Questions
   Id (PK), StageId (FK -> Stages), OrderNo, Content,
   OptionA, OptionB, OptionC, OptionD, CorrectOption ('A'..'D'),
-  Hint1, Hint2, Explanation (nullable; Boss có thể để trống hint)
+  Hint1 (nullable), Hint2 (nullable), Explanation (nullable)
 
 PlayerStageProgress
-  PlayerId (FK), StageId (FK)  -- PK ghép
-  IsCompleted, FirstClearedAt, BestCorrectCount, BossRewardClaimed
+  PlayerId (FK -> Players), StageId (FK -> Stages) -- PK ghép
+  IsCompleted, FirstClearedAt (nullable), BestCorrectCount, BossRewardClaimed
 
 StageAttempts
-  Id (PK), PlayerId (FK), StageId (FK),
+  Id (PK), PlayerId (FK -> Players), StageId (FK -> Stages),
   StartedAt, ExpiresAt, FinishedAt (nullable),
   Status ('InProgress' | 'Passed' | 'Failed' | 'Expired'),
   CorrectCount, ExpEarned
-  -- Ải thường: ExpiresAt được server cập nhật lại mỗi khi user tương tác
-  --   (trả lời câu hoặc gọi hint), không set cố định 1 lần.
-  -- Boss: ExpiresAt cố định = StartedAt + 30 phút, không gia hạn.
 
 AttemptQuestions
-  AttemptId (FK), QuestionId (FK), OrderNo  -- PK ghép; các câu của một lượt chơi
+  AttemptId (FK -> StageAttempts), QuestionId (FK -> Questions), OrderNo
+  PK ghép (AttemptId, QuestionId)
 
 AttemptAnswers
-  Id (PK), AttemptId (FK), QuestionId (FK),
-  SelectedOption (nullable), IsCorrect,
-  ShownHint1, UsedNextHint, ExpDelta
+  Id (PK), AttemptId (FK -> StageAttempts), QuestionId (FK -> Questions),
+  SelectedOption (nullable), IsCorrect, ShownHint1, UsedNextHint, ExpDelta
+
+PracticeRecords
+  PlayerId (FK -> Players), QuestionId (string), IsCorrect
+  PK ghép (PlayerId, QuestionId)
 ```
 
-**Ghi chú:**
-- `ExpRequired` của trường là con số đặt tay trong bảng Universities.
-- Câu hỏi Boss nằm trong bảng `Questions` với `StageId` = ải Boss, đóng vai trò ngân hàng câu hỏi. Mỗi lần `start` Boss, server chọn ngẫu nhiên 15 câu và ghi vào `AttemptQuestions`. Ải thường: ghi cả 10 câu theo thứ tự cố định.
-- Server chỉ nhận câu trả lời cho câu có trong `AttemptQuestions` của lượt chơi đó.
-- `ExpDelta` mỗi câu: +`ExpPerCorrect` của ải nếu đúng (ải thường), -60 nếu bấm "Xem tiếp".
-- `Status` khi `finish` ải thường: `Passed` nếu đúng ≥ 8, ngược lại `Failed`; **cả hai đều được cộng EXP**.
-- `ExpEarned` của ải thường = tổng `ExpDelta`, chặn tối thiểu 0 (tính cả khi `Failed`). Lượt `Expired` hoặc bị bỏ do `restart` không cộng EXP. Boss: `ExpEarned` = `BonusExp` (2000) nếu thắng lần ĐẦU TIÊN (`BossRewardClaimed` = false), ngược lại 0.
-- Lượt chơi ải thường dở quá 15 phút kể từ lần tương tác cuối (`ExpiresAt` đã qua) bị coi là `Expired`. Boss: lượt dở không được giữ; mỗi lần vào Boss tạo lượt mới từ đầu (lượt cũ coi là `Expired`).
+**Ghi chú dữ liệu và nghiệp vụ**
+- `Accounts.PlayerId` liên kết một-một với hồ sơ `Players`; `Players.Name` được tạo theo username tài khoản.
+- `LoginSessions` không lưu bearer token dạng rõ. Phiên hết hạn có thể được dọn khi tạo phiên đăng nhập mới.
+- `PlayerBadges` là bảng liên kết nhiều-nhiều; nghiệp vụ finish lượt tự trao các huy hiệu đã cấu hình khi người chơi đạt điều kiện.
+- `ExpRequired` là ngưỡng của từng trường trong `Universities`; `AvatarId` là mã avatar chứ không phải dữ liệu ảnh nhị phân.
+- Các câu Boss dùng `StageId` của Boss làm ngân hàng. Khi bắt đầu, server ghi 15 câu ngẫu nhiên vào `AttemptQuestions`; ải thường sử dụng các câu được cấu hình cho ải.
+- `ExpDelta` ghi biến động câu trả lời/hint. EXP lượt thường được tính ở server và không thể thấp hơn 0; lượt thường Failed vẫn có thể nhận EXP. Boss chỉ cấp `BonusExp` khi thắng lần đầu.
+- Lượt thường hết hạn sau 15 phút không tương tác; `ExpiresAt` được cập nhật theo tương tác. Hạn Boss cố định 30 phút tính từ lúc bắt đầu.
+- `PracticeRecords` lưu kết quả mới nhất cho từng cặp người chơi/câu Ôn luyện; ngân hàng câu Ôn luyện nằm trong mã nguồn `PracticeBank`, không phải bảng `Questions`.
 
 # 5. API endpoints
 
-**Người chơi**
-- `POST /api/players/login`: body `{ name }`; tạo mới nếu chưa có, trả thông tin người chơi.
-- `GET /api/players/{id}`: thông tin, EXP, trường mục tiêu, trạng thái mở khóa.
-- `PUT /api/players/{id}/target`: body `{ universityId }`.
-- `GET /api/universities`: danh sách trường và EXP mục tiêu.
+Tất cả route dưới đây có tiền tố `/api` trừ `/health`. API yêu cầu bearer token, ngoại trừ đăng ký/đăng nhập và health check. Các route truy vấn/thay đổi dữ liệu Player chỉ cho phép chủ sở hữu Player tương ứng; API quản trị yêu cầu role Admin.
+
+**Auth**
+- `POST /api/auth/register`: body `{ username, password }`; kiểm tra định dạng, tạo Account và Player, trả token, thời hạn, role và thông tin player.
+- `POST /api/auth/login`: body `{ username, password }`; trả token, thời hạn, role và thông tin player. Sai thông tin hoặc đang bị khóa trả lỗi xác thực.
+- `POST /api/auth/logout`: thu hồi session bearer đang dùng; trả `204 No Content`.
+
+**Người chơi, hồ sơ và lịch sử**
+- `GET /api/players/{id}`: thông tin Player, Avatar, EXP, trường mục tiêu và trạng thái mở khóa.
+- `PUT /api/players/{id}/target`: body `{ universityId }`; chọn trường mục tiêu một lần.
+- `GET /api/players/{id}/profile`: hồ sơ gồm tên, Avatar, tổng EXP và danh sách huy hiệu.
+- `PUT /api/players/{id}/avatar`: body `{ avatarId }`; cập nhật Avatar.
+- `GET /api/players/{id}/history`: các lượt ải/Boss hoàn tất, mới nhất trước; gồm trạng thái, số câu đúng/tổng câu, EXP và thời điểm chơi.
+- `GET /api/universities`: danh sách trường và ngưỡng EXP.
+- `POST /api/players/login` là route cũ không còn dùng để đăng nhập; backend hiện trả `410 Gone`. Dùng `/api/auth/login`.
 
 **Ải và lượt chơi**
-- `GET /api/stages?playerId=`: danh sách ải kèm trạng thái (khóa / mở / đã qua) và `hasInProgressAttempt` (chỉ có ở ải thường: true nếu người chơi đang có lượt dở còn hạn; client dùng để hiện hộp thoại "tiếp tục / chơi lại").
-- `POST /api/stages/{stageId}/start`: body `{ playerId, restart }` (`restart` mặc định false). Ải thường: nếu có lượt dở còn hạn và `restart` = false thì trả lượt dở; `restart` = true thì lượt cũ chuyển `Expired` (không cộng EXP) và tạo lượt mới. Boss: `restart` không có tác dụng, luôn tạo lượt mới từ đầu và chọn ngẫu nhiên 15 câu từ ngân hàng Boss. Từ chối nếu ải chưa mở. Trả danh sách câu hỏi của lượt đó (không có đáp án đúng, không có hint) và `expiresAt`.
-- `GET /api/attempts/{attemptId}`: lấy lại trạng thái để chơi tiếp sau khi thoát (chỉ ải thường).
-- `POST /api/attempts/{attemptId}/answer`: body `{ questionId, selectedOption }`; ải thường: trả `isCorrect`, nếu sai thì trả kèm Hint 1 (free, không trừ EXP); Boss: chỉ xác nhận đã ghi nhận câu trả lời, không trả `isCorrect`, không trả hint.
-- `POST /api/attempts/{attemptId}/hint/next`: body `{ questionId }`; chỉ gọi khi người chơi bấm "Xem tiếp"; trả Hint 2 và trừ 60 EXP vào tổng EXP của ải; từ chối nếu là Boss hoặc câu không sai.
-- `POST /api/attempts/{attemptId}/finish`: kết thúc, trả kết quả (qua/thua, số đúng, EXP nhận, tổng EXP mới). Ải thường: từ chối nếu chưa trả lời đủ 10 câu. Boss: gọi lúc nào cũng được, câu chưa trả lời tính là sai.
-- `GET /api/attempts/{attemptId}/summary`: chỉ gọi được sau `finish`. Ải thường: các câu sai + hint + giải thích. Boss: đáp án đúng của cả 15 câu, câu người chơi đã chọn và giải thích (nếu có).
+- `GET /api/stages?playerId={id}`: danh sách ải và trạng thái khóa/mở/đã qua; gồm trạng thái lượt thường đang dở còn hạn.
+- `POST /api/stages/{stageId}/start`: body `{ playerId, restart }`. Ải thường trả lượt đang dở nếu còn hạn và `restart` là false; `restart: true` làm lượt cũ hết hạn và tạo lượt mới. Boss luôn bắt đầu lượt mới và chọn ngẫu nhiên 15 câu. Câu trả về không bao gồm đáp án đúng hay hint.
+- `GET /api/attempts/{attemptId}`: lấy lại trạng thái lượt thường còn hạn.
+- `POST /api/attempts/{attemptId}/answer`: body `{ questionId, selectedOption }`. Ải thường trả đúng/sai và Hint 1 nếu sai; Boss chỉ xác nhận đã ghi nhận câu trả lời.
+- `POST /api/attempts/{attemptId}/hint/next`: body `{ questionId }`; trả Hint 2 và áp dụng mức trừ 60 EXP. Không áp dụng cho Boss.
+- `POST /api/attempts/{attemptId}/finish`: hoàn tất lượt, trả kết quả, trạng thái và EXP; lượt thường yêu cầu đủ câu trả lời, Boss tính câu bỏ trống là sai.
+- `GET /api/attempts/{attemptId}/summary`: xem tổng kết sau khi hoàn tất; ải thường trả nội dung câu sai/hint/giải thích, Boss trả đáp án và lựa chọn đã gửi.
+
+**Ôn luyện**
+- `GET /api/practice/topics`: danh sách chủ đề, bài nhắc kiến thức và số câu mỗi chủ đề.
+- `GET /api/practice/questions?topicId={id}`: câu hỏi theo chủ đề; bỏ `topicId` để lấy toàn bộ câu. Không trả đáp án/giải thích trước khi nộp.
+- `POST /api/practice/answer`: body `{ questionId, selectedIndex }`; chấm và trả kết quả/đáp án/giải thích, đồng thời cập nhật kết quả gần nhất.
+- `GET /api/practice/progress`: kết quả gần nhất của các câu thuộc người chơi đang đăng nhập.
+
+**Quản lý câu hỏi – Admin**
+- `GET /api/admin/questions`: danh sách câu hỏi; chỉ Admin.
+- `GET /api/admin/questions/{id}`: chi tiết câu hỏi; chỉ Admin.
+- `POST /api/admin/questions`: tạo câu hỏi; body gồm `stageId`, `content`, `optionA`–`optionD`, `correctOption` (`A`–`D`), `hint1`, `hint2`, `explanation`. `orderNo` tự tăng trong ải.
+- `PUT /api/admin/questions/{id}`: cập nhật câu hỏi; nếu chuyển sang ải khác, câu hỏi được xếp cuối ải mới.
+- `DELETE /api/admin/questions/{id}`: xóa câu hỏi; trả conflict nếu câu đã được tham chiếu trong lượt/câu trả lời.
+
+**Hệ thống**
+- `GET /health`: health check, cho phép ẩn danh.
+- Trong Development, OpenAPI được cung cấp tại `/openapi/v1.json`.
 
 # 6. UI/UX Direction
 
 **Phong cách:** RPG nhẹ, tươi, dễ đọc; không rối mắt vì học sinh dùng để học.
 
-**Palette (đề xuất)**
+**Palette (hiện tại)**
 - Nền chính: `#1B1F3B` (xanh navy đậm)
 - Nhấn chính: `#6C4AB6` (tím)
 - EXP / phần thưởng: `#F5B83D` (vàng)
@@ -208,7 +265,7 @@ AttemptAnswers
 - Tiêu đề: đậm 700; câu hỏi: 600, cỡ lớn; nội dung/hint: 400.
 
 **Danh sách màn hình**
-1. Nhập tên (vào app)
+1. Đăng nhập / Đăng ký tài khoản
 2. Chọn trường mục tiêu
 3. Trang chủ: EXP hiện tại, thanh tiến độ tới EXP mục tiêu, trạng thái mở khóa trường
 4. Bản đồ ải: 3 ải thường + Boss (khóa/mở/đã qua)
@@ -263,7 +320,7 @@ AttemptAnswers
 - **Vibe code:** bạn không đọc được code, nên kiểm tra bằng chạy thử sau mỗi tính năng và commit nhỏ, thường xuyên.
 - **Bản quyền đề thi:** chỉ dùng cho đồ án học thuật; nếu phát triển thật thì phải kiểm tra lại.
 
-**Đã chốt:** 3 ải thường (EXP mỗi câu đúng: 200 / 300 / 400); Hint 1 free tự hiện khi sai, "Xem tiếp" ra Hint 2 và trừ 60 EXP vào tổng EXP của ải; EXP ải chặn ở 0; Boss mở khi hoàn thành 3 ải thường (không xét EXP), 15 câu random mỗi lần chơi từ ngân hàng khoảng 60 câu, thắng lần đầu thưởng 2000 EXP, chơi lại không tính điểm (chỉ ôn tập), thoát giữa Boss thì chơi lại từ đầu, thua Boss không bị khóa, Boss không hiện đúng/sai từng câu (đáp án công bố ở màn kết quả), finish Boss gọi lúc nào cũng được; ải thường không đạt (< 8 đúng) vẫn nhận EXP theo công thức, finish ải thường yêu cầu đủ 10 câu; `GET /api/stages` có `hasInProgressAttempt`, `POST start` có `restart`; mở ải tuần tự; khi tổng EXP đạt mức của trường đã chọn thì chỉ hiện trạng thái "đã mở khóa" kèm hộp thoại chúc mừng; mục tiêu trường cố định; bỏ phần Ôn luyện; backend chạy localhost.
+**Đã chốt:** 3 ải thường (EXP mỗi câu đúng: 200 / 300 / 400); Hint 1 free tự hiện khi sai, "Xem tiếp" ra Hint 2 và trừ 60 EXP vào tổng EXP của ải; EXP ải chặn ở 0; Boss mở khi hoàn thành 3 ải thường (không xét EXP), 15 câu random mỗi lần chơi từ ngân hàng khoảng 60 câu, thắng lần đầu thưởng 2000 EXP, chơi lại không tính điểm (chỉ ôn tập), thoát giữa Boss thì chơi lại từ đầu, thua Boss không bị khóa, Boss không hiện đúng/sai từng câu (đáp án công bố ở màn kết quả), finish Boss gọi lúc nào cũng được; ải thường không đạt (< 8 đúng) vẫn nhận EXP theo công thức, finish ải thường yêu cầu đủ 10 câu; `GET /api/stages` có `hasInProgressAttempt`, `POST start` có `restart`; mở ải tuần tự; khi tổng EXP đạt mức của trường đã chọn thì chỉ hiện trạng thái "đã mở khóa" kèm hộp thoại chúc mừng; mục tiêu trường cố định; Ôn luyện có 4 chủ đề, 24 câu, không cộng EXP; backend chạy localhost.
 
 **Câu hỏi mở**
 - Hiện chưa còn câu hỏi mở. Nếu phát sinh khi code (ví dụ cách tính giờ Boss khi mất mạng), ghi thêm vào đây.
