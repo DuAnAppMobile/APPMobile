@@ -42,6 +42,13 @@ public class PlayersController(IPlayerService playerService) : ControllerBase
         }
     }
 
+    [HttpGet("{id:int}/history")]
+    public async Task<ActionResult<List<PlayerHistoryDto>>> GetHistory(int id, CancellationToken cancellationToken)
+    {
+        var history = await playerService.GetPlayerHistoryAsync(id, cancellationToken);
+        return Ok(history);
+    }
+
     [HttpPut("{id:int}/target")]
     public async Task<ActionResult<PlayerResponseDto>> SetTarget(int id, [FromBody] SetPlayerTargetRequest request, CancellationToken cancellationToken)
     {

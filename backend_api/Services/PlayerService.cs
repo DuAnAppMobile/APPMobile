@@ -46,6 +46,41 @@ public class PlayerService(AppDbContext dbContext) : IPlayerService
         return player ?? throw new KeyNotFoundException($"Player with id {id} was not found.");
     }
 
+    public async Task<List<PlayerHistoryDto>> GetPlayerHistoryAsync(int id, CancellationToken cancellationToken = default)
+    {
+        var attempts = await dbContext.StageAttempts
+            .AsNoTracking()
+            .Where(attempt => attempt.PlayerId == id &&
+                              attempt.FinishedAt != null &&
+                              (attempt.Status == StageAttemptStatus.Passed ||
+                               attempt.Status == StageAttemptStatus.Failed))
+            .OrderByDescending(attempt => attempt.FinishedAt)
+            .Select(attempt => new
+            {
+                AttemptId = attempt.Id,
+                StageName = attempt.Stage.Name,
+                attempt.CorrectCount,
+                TotalQuestions = attempt.AttemptQuestions.Count,
+                attempt.ExpEarned,
+                attempt.Status,
+                PlayedAt = attempt.FinishedAt!.Value
+            })
+            .ToListAsync(cancellationToken);
+
+        return attempts
+            .Select(attempt => new PlayerHistoryDto
+            {
+                AttemptId = attempt.AttemptId,
+                StageName = attempt.StageName,
+                CorrectCount = attempt.CorrectCount,
+                TotalQuestions = attempt.TotalQuestions,
+                ExpEarned = attempt.ExpEarned,
+                Status = attempt.Status.ToString(),
+                PlayedAt = attempt.PlayedAt
+            })
+            .ToList();
+    }
+
     public async Task<PlayerResponseDto> SetTargetUniversityAsync(int id, int universityId, CancellationToken cancellationToken = default)
     {
         if (universityId <= 0)
