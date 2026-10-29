@@ -10,6 +10,8 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<PracticeRecord> PracticeRecords => Set<PracticeRecord>();
     public DbSet<University> Universities => Set<University>();
     public DbSet<Player> Players => Set<Player>();
+    public DbSet<Badge> Badges => Set<Badge>();
+    public DbSet<PlayerBadge> PlayerBadges => Set<PlayerBadge>();
     public DbSet<Stage> Stages => Set<Stage>();
     public DbSet<Question> Questions => Set<Question>();
     public DbSet<PlayerStageProgress> PlayerStageProgress => Set<PlayerStageProgress>();
@@ -56,7 +58,31 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             entity.HasKey(player => player.Id);
             entity.HasIndex(player => player.Name).IsUnique();
             entity.Property(player => player.Name).HasMaxLength(100).IsRequired();
+            entity.Property(player => player.AvatarId).HasMaxLength(100).HasDefaultValue("default_avatar").IsRequired();
             entity.Property(player => player.CreatedAt).HasColumnType("datetime2");
+        });
+
+        modelBuilder.Entity<Badge>(entity =>
+        {
+            entity.ToTable("Badges");
+            entity.HasKey(badge => badge.Id);
+            entity.Property(badge => badge.Name).HasMaxLength(200).IsRequired();
+            entity.Property(badge => badge.Description).HasMaxLength(1000).IsRequired();
+            entity.Property(badge => badge.IconUrl).HasMaxLength(2048).IsRequired();
+        });
+
+        modelBuilder.Entity<PlayerBadge>(entity =>
+        {
+            entity.ToTable("PlayerBadges");
+            entity.HasKey(playerBadge => new { playerBadge.PlayerId, playerBadge.BadgeId });
+            entity.HasOne(playerBadge => playerBadge.Player)
+                .WithMany(player => player.Badges)
+                .HasForeignKey(playerBadge => playerBadge.PlayerId)
+                .OnDelete(DeleteBehavior.Cascade);
+            entity.HasOne(playerBadge => playerBadge.Badge)
+                .WithMany(badge => badge.Players)
+                .HasForeignKey(playerBadge => playerBadge.BadgeId)
+                .OnDelete(DeleteBehavior.Cascade);
         });
 
         modelBuilder.Entity<Stage>(entity =>

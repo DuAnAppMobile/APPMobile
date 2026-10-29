@@ -21,6 +21,31 @@ public class PlayerService(AppDbContext dbContext) : IPlayerService
         return MapPlayer(player);
     }
 
+    public async Task<PlayerProfileDto> GetPlayerProfileAsync(int id, CancellationToken cancellationToken = default)
+    {
+        var player = await dbContext.Players
+            .AsNoTracking()
+            .Where(currentPlayer => currentPlayer.Id == id)
+            .Select(currentPlayer => new PlayerProfileDto
+            {
+                Name = currentPlayer.Name,
+                TotalExp = currentPlayer.TotalExp,
+                AvatarId = currentPlayer.AvatarId,
+                Badges = currentPlayer.Badges
+                    .Select(playerBadge => new BadgeDto
+                    {
+                        Id = playerBadge.Badge.Id,
+                        Name = playerBadge.Badge.Name,
+                        Description = playerBadge.Badge.Description,
+                        IconUrl = playerBadge.Badge.IconUrl
+                    })
+                    .ToList()
+            })
+            .FirstOrDefaultAsync(cancellationToken);
+
+        return player ?? throw new KeyNotFoundException($"Player with id {id} was not found.");
+    }
+
     public async Task<PlayerResponseDto> SetTargetUniversityAsync(int id, int universityId, CancellationToken cancellationToken = default)
     {
         if (universityId <= 0)
@@ -60,6 +85,33 @@ public class PlayerService(AppDbContext dbContext) : IPlayerService
         return MapPlayer(player);
     }
 
+    public async Task<PlayerResponseDto> SetAvatarAsync(int id, string avatarId, CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(avatarId))
+        {
+            throw new ArgumentException("Avatar id is required.", nameof(avatarId));
+        }
+
+        if (avatarId.Length > 100)
+        {
+            throw new ArgumentException("Avatar id cannot exceed 100 characters.", nameof(avatarId));
+        }
+
+        var player = await dbContext.Players
+            .Include(currentPlayer => currentPlayer.TargetUniversity)
+            .FirstOrDefaultAsync(currentPlayer => currentPlayer.Id == id, cancellationToken);
+
+        if (player is null)
+        {
+            throw new KeyNotFoundException($"Player with id {id} was not found.");
+        }
+
+        player.AvatarId = avatarId;
+        await dbContext.SaveChangesAsync(cancellationToken);
+
+        return MapPlayer(player);
+    }
+
     private static PlayerResponseDto MapPlayer(Player player)
     {
         var targetUniversity = player.TargetUniversity;
@@ -69,6 +121,7 @@ public class PlayerService(AppDbContext dbContext) : IPlayerService
         {
             Id = player.Id,
             Name = player.Name,
+            AvatarId = player.AvatarId,
             TotalExp = player.TotalExp,
             TargetUniversityId = player.TargetUniversityId,
             TargetUniversity = targetUniversity is null
