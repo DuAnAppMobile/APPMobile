@@ -4,9 +4,11 @@ import 'package:http/http.dart' as http;
 class AuthSession {
   static String? token;
   static int? playerId;
+  static String role = 'User';
   static void clear() {
     token = null;
     playerId = null;
+    role = 'User';
   }
 }
 

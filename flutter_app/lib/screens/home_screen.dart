@@ -10,6 +10,7 @@ import '../widgets/quest_mascot.dart';
 import 'stages_map_screen.dart';
 import 'practice_screen.dart';
 import 'login_screen.dart';
+import 'account_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key, required this.player, required this.university});
@@ -120,6 +121,19 @@ class _HomeScreenState extends State<HomeScreen> {
       appBar: AppBar(
         title: const Text('Hành trình của bạn'),
         actions: [
+          IconButton(
+            tooltip: 'Hồ sơ cá nhân',
+            icon: const Icon(Icons.account_circle_outlined),
+            onPressed: () async {
+              await Navigator.push(
+                context,
+                MaterialPageRoute<void>(
+                  builder: (_) => AccountScreen(playerId: _player.id),
+                ),
+              );
+              if (mounted) await _refreshPlayer();
+            },
+          ),
           IconButton(
             tooltip: 'Đăng xuất',
             icon: const Icon(Icons.logout),

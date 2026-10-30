@@ -72,6 +72,63 @@ public sealed class AuthController(AppDbContext db, IPlayerService players) : Co
         return Ok(new { token, expiresAt, role = account.Role, player = await players.GetPlayerByIdAsync(account.PlayerId, ct) });
     }
 
+    public sealed record PasswordChange(string? CurrentPassword, string? NewPassword);
+    public sealed record PasswordReset(string? Username, string? Code, string? NewPassword);
+    private static bool ValidPassword(string? value) => value is { Length: >= 10 and <= 128 } && value.Any(char.IsLetter) && value.Any(char.IsDigit);
+    // Domain-separated recovery hashes cannot authenticate as bearer sessions.
+    private static string RecoveryHash(string code) => "R" + AccountSecurity.HashToken("recovery:" + code)[..63];
+
+    [HttpPost("change-password"), EnableRateLimiting("auth")]
+    public async Task<IActionResult> ChangePassword(PasswordChange request, CancellationToken ct)
+    {
+        if (!ValidPassword(request.NewPassword)) return BadRequest(new { message = "Mật khẩu mới cần 10–128 ký tự, có chữ và số." });
+        var account = await db.Accounts.SingleAsync(a => a.PlayerId == User.PlayerId(), ct);
+        if (request.CurrentPassword is null || request.CurrentPassword.Length > 128 || Hasher.VerifyHashedPassword(account, account.PasswordHash, request.CurrentPassword) == PasswordVerificationResult.Failed)
+            return BadRequest(new { message = "Mật khẩu hiện tại chưa đúng." });
+        await using var transaction = await db.Database.BeginTransactionAsync(ct);
+        account.PasswordHash = Hasher.HashPassword(account, request.NewPassword!);
+        await db.LoginSessions.Where(s => s.AccountId == account.Id).ExecuteDeleteAsync(ct);
+        await db.SaveChangesAsync(ct);
+        await transaction.CommitAsync(ct);
+        return NoContent();
+    }
+
+    [HttpPost("recovery-code"), EnableRateLimiting("auth")]
+    public async Task<IActionResult> RecoveryCode(PasswordChange request, CancellationToken ct)
+    {
+        var account = await db.Accounts.SingleAsync(a => a.PlayerId == User.PlayerId(), ct);
+        if (request.CurrentPassword is null || request.CurrentPassword.Length > 128 || Hasher.VerifyHashedPassword(account, account.PasswordHash, request.CurrentPassword) == PasswordVerificationResult.Failed)
+            return BadRequest(new { message = "Mật khẩu hiện tại chưa đúng." });
+        var code = Convert.ToHexString(RandomNumberGenerator.GetBytes(32));
+        await using var transaction = await db.Database.BeginTransactionAsync(ct);
+        await db.LoginSessions.Where(s => s.AccountId == account.Id && s.TokenHash.StartsWith("R")).ExecuteDeleteAsync(ct);
+        var expiresAt = DateTime.UtcNow.AddDays(90);
+        db.LoginSessions.Add(new LoginSession { AccountId = account.Id, TokenHash = RecoveryHash(code), ExpiresAt = expiresAt });
+        await db.SaveChangesAsync(ct);
+        await transaction.CommitAsync(ct);
+        return Ok(new { code, expiresAt });
+    }
+
+    [AllowAnonymous, HttpPost("reset-password"), EnableRateLimiting("auth")]
+    public async Task<IActionResult> ResetPassword(PasswordReset request, CancellationToken ct)
+    {
+        if (!ValidPassword(request.NewPassword)) return BadRequest(new { message = "Mật khẩu mới cần 10–128 ký tự, có chữ và số." });
+        if (request.Code is not { Length: 64 } || request.Username is not { Length: <= 32 })
+            return BadRequest(new { message = "Tài khoản hoặc mã khôi phục không hợp lệ." });
+        var hash = RecoveryHash(request.Code.Trim().ToUpperInvariant());
+        await using var transaction = await db.Database.BeginTransactionAsync(ct);
+        var recovery = await db.LoginSessions.Include(s => s.Account).SingleOrDefaultAsync(s => s.TokenHash == hash, ct);
+        if (recovery is null || recovery.ExpiresAt <= DateTime.UtcNow || recovery.Account.Username != request.Username.Trim().ToLowerInvariant())
+            return BadRequest(new { message = "Tài khoản hoặc mã khôi phục không hợp lệ, đã dùng hoặc hết hạn." });
+        var account = recovery.Account;
+        account.PasswordHash = Hasher.HashPassword(account, request.NewPassword!);
+        account.FailedLogins = 0; account.LockedUntil = null;
+        await db.LoginSessions.Where(s => s.AccountId == account.Id).ExecuteDeleteAsync(ct);
+        await db.SaveChangesAsync(ct);
+        await transaction.CommitAsync(ct);
+        return NoContent();
+    }
+
     [HttpPost("logout")]
     public async Task<IActionResult> Logout(CancellationToken ct)
     {

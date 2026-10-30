@@ -8,6 +8,7 @@ import '../widgets/primary_button.dart';
 import '../widgets/rpg_shell.dart';
 import '../widgets/quest_mascot.dart';
 import 'home_screen.dart';
+import 'account_screen.dart';
 import 'university_selection_screen.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -127,6 +128,18 @@ class _LoginScreenState extends State<LoginScreen> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 const QuestMascot(height: 160, compact: true),
+                if (!_register)
+                  TextButton(
+                    onPressed: _isLoading
+                        ? null
+                        : () => Navigator.push(
+                            context,
+                            MaterialPageRoute<void>(
+                              builder: (_) => const PasswordScreen(reset: true),
+                            ),
+                          ),
+                    child: const Text('Quên mật khẩu?'),
+                  ),
                 const SizedBox(height: 28),
                 Text(
                   _register

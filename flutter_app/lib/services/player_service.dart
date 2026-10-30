@@ -59,6 +59,7 @@ class PlayerService {
     final player = Player.fromJson(data['player']);
     AuthSession.token = data['token'];
     AuthSession.playerId = player.id;
+    AuthSession.role = data['role'] as String? ?? 'User';
     return player;
   }
 

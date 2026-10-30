@@ -41,6 +41,13 @@ abstract final class AppTheme {
       colorScheme: colorScheme,
       scaffoldBackgroundColor: Colors.transparent,
       useMaterial3: true,
+      pageTransitionsTheme: const PageTransitionsTheme(
+        builders: {
+          TargetPlatform.android: QuestPageTransition(),
+          TargetPlatform.windows: QuestPageTransition(),
+          TargetPlatform.linux: QuestPageTransition(),
+        },
+      ),
       splashFactory: InkSparkle.splashFactory,
       textTheme: baseTextTheme.copyWith(
         displaySmall: baseTextTheme.displaySmall?.copyWith(
@@ -154,6 +161,30 @@ abstract final class AppTheme {
         linearTrackColor: AppColors.surfaceBright,
       ),
       dividerColor: AppColors.border,
+    );
+  }
+}
+
+class QuestPageTransition extends PageTransitionsBuilder {
+  const QuestPageTransition();
+  @override
+  Widget buildTransitions<T>(
+    PageRoute<T> route,
+    BuildContext context,
+    Animation<double> animation,
+    Animation<double> secondaryAnimation,
+    Widget child,
+  ) {
+    if (MediaQuery.disableAnimationsOf(context)) return child;
+    final curved = animation.drive(CurveTween(curve: Curves.easeOutCubic));
+    return FadeTransition(
+      opacity: curved,
+      child: SlideTransition(
+        position: curved.drive(
+          Tween(begin: const Offset(0.035, 0.02), end: Offset.zero),
+        ),
+        child: child,
+      ),
     );
   }
 }
