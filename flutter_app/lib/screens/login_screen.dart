@@ -128,18 +128,6 @@ class _LoginScreenState extends State<LoginScreen> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 const QuestMascot(height: 160, compact: true),
-                if (!_register)
-                  TextButton(
-                    onPressed: _isLoading
-                        ? null
-                        : () => Navigator.push(
-                            context,
-                            MaterialPageRoute<void>(
-                              builder: (_) => const PasswordScreen(reset: true),
-                            ),
-                          ),
-                    child: const Text('Quên mật khẩu?'),
-                  ),
                 const SizedBox(height: 28),
                 Text(
                   _register
@@ -219,6 +207,22 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                         ),
                       ),
+                      if (!_register)
+                        Align(
+                          alignment: Alignment.centerRight,
+                          child: TextButton(
+                            onPressed: _isLoading
+                                ? null
+                                : () => Navigator.push(
+                                    context,
+                                    MaterialPageRoute<void>(
+                                      builder: (_) =>
+                                          const PasswordScreen(reset: true),
+                                    ),
+                                  ),
+                            child: const Text('Quên mật khẩu?'),
+                          ),
+                        ),
                       if (_register) ...[
                         const SizedBox(height: 14),
                         TextField(
