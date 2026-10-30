@@ -10,6 +10,8 @@ import '../widgets/quest_mascot.dart';
 import 'home_screen.dart';
 import 'account_screen.dart';
 import 'university_selection_screen.dart';
+import '../services/auth_client.dart';
+import 'admin_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key, this.playerService});
@@ -88,6 +90,12 @@ class _LoginScreenState extends State<LoginScreen> {
         register: _register,
       );
       if (!mounted) return;
+      if (AuthSession.role == 'Admin') {
+        await Navigator.of(context).pushReplacement(
+          MaterialPageRoute<void>(builder: (_) => const AdminScreen()),
+        );
+        return;
+      }
       final targetUniversityId = player.targetUniversityId;
       final targetUniversity = player.targetUniversity;
       if (targetUniversityId != null &&

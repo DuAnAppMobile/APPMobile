@@ -2,15 +2,23 @@ import 'package:flutter/material.dart';
 
 import '../services/account_service.dart';
 import '../services/auth_client.dart';
+import '../services/player_service.dart';
+import 'login_screen.dart';
+import 'account_screen.dart';
 
 class AdminScreen extends StatefulWidget {
-  const AdminScreen({super.key});
+  const AdminScreen({super.key, this.api});
+  final AccountApi? api;
   @override
   State<AdminScreen> createState() => _AdminScreenState();
 }
 
 class _AdminScreenState extends State<AdminScreen> {
-  final api = AccountApi();
+  late final api = widget.api ?? AccountApi();
+  int tab = 0;
+  int stageFilter = 0;
+  String search = '';
+  bool loading = false;
   List<dynamic>? questions;
   String? error;
   bool busy = false;
@@ -27,6 +35,11 @@ class _AdminScreenState extends State<AdminScreen> {
   }
 
   Future<void> load() async {
+    if (loading) return;
+    setState(() {
+      loading = true;
+      error = null;
+    });
     try {
       final data = await api.call('admin/questions');
       if (mounted) {
@@ -37,8 +50,54 @@ class _AdminScreenState extends State<AdminScreen> {
       }
     } catch (e) {
       if (mounted) setState(() => error = '$e');
+    } finally {
+      if (mounted) setState(() => loading = false);
     }
   }
+
+  Future<void> logout() async {
+    if (busy) return;
+    setState(() => busy = true);
+    final service = PlayerService();
+    try {
+      await service.logout();
+      if (!mounted) return;
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute<void>(builder: (_) => const LoginScreen()),
+        (_) => false,
+      );
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('Chưa thể đăng xuất: $e')));
+      }
+    } finally {
+      service.dispose();
+      if (mounted) setState(() => busy = false);
+    }
+  }
+
+  Widget metric(String label, String value, IconData icon) => Container(
+    width: 150,
+    padding: const EdgeInsets.all(18),
+    decoration: BoxDecoration(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(18),
+      border: Border.all(color: const Color(0xFFE1E6EF)),
+    ),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(icon, color: const Color(0xFF4D61A8)),
+        const SizedBox(height: 12),
+        Text(
+          value,
+          style: const TextStyle(fontSize: 28, fontWeight: FontWeight.w800),
+        ),
+        Text(label),
+      ],
+    ),
+  );
 
   Future<void> edit([Map<String, dynamic>? question]) async {
     final saved = await Navigator.push<bool>(
@@ -91,23 +150,123 @@ class _AdminScreenState extends State<AdminScreen> {
         body: const Center(child: Text('Chỉ quản trị viên được truy cập.')),
       );
     }
+    final all = questions ?? [];
+    final filtered = all
+        .where(
+          (q) =>
+              (stageFilter == 0 || q['stageId'] == stageFilter) &&
+              '${q['content']}'.toLowerCase().contains(search.toLowerCase()),
+        )
+        .toList();
     return Scaffold(
+      backgroundColor: const Color(0xFFF3F5FA),
       appBar: AppBar(
-        title: const Text('Kho câu hỏi'),
-        actions: [IconButton(onPressed: load, icon: const Icon(Icons.refresh))],
+        automaticallyImplyLeading: false,
+        backgroundColor: const Color(0xFF202D4A),
+        foregroundColor: Colors.white,
+        title: const Text(
+          'English Quest • Quản trị',
+          style: TextStyle(fontSize: 18),
+        ),
+        actions: [
+          IconButton(
+            tooltip: 'Tải lại',
+            onPressed: loading ? null : load,
+            icon: const Icon(Icons.refresh),
+          ),
+        ],
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: busy ? null : () => edit(),
-        icon: const Icon(Icons.add),
-        label: const Text('Thêm câu'),
+      bottomNavigationBar: NavigationBar(
+        selectedIndex: tab,
+        onDestinationSelected: (index) => setState(() => tab = index),
+        destinations: const [
+          NavigationDestination(
+            icon: Icon(Icons.dashboard_outlined),
+            selectedIcon: Icon(Icons.dashboard),
+            label: 'Tổng quan',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.quiz_outlined),
+            selectedIcon: Icon(Icons.quiz),
+            label: 'Câu hỏi',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.settings_outlined),
+            label: 'Tài khoản',
+          ),
+        ],
       ),
+      floatingActionButton: tab != 1
+          ? null
+          : FloatingActionButton.extended(
+              onPressed: busy ? null : () => edit(),
+              icon: const Icon(Icons.add),
+              label: const Text('Thêm câu'),
+            ),
       body: Column(
         children: [
-          if (busy) const LinearProgressIndicator(),
+          if (busy || loading) const LinearProgressIndicator(),
           if (error != null)
             Padding(padding: const EdgeInsets.all(16), child: Text(error!)),
           Expanded(
-            child: error != null && questions == null
+            child: tab == 2
+                ? ListView(
+                    padding: const EdgeInsets.all(24),
+                    children: [
+                      const Icon(
+                        Icons.admin_panel_settings,
+                        size: 64,
+                        color: Color(0xFF202D4A),
+                      ),
+                      const SizedBox(height: 16),
+                      const Text(
+                        'Tài khoản quản trị',
+                        style: TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const Text(
+                        'Quản lý nội dung học tập và bảo mật tài khoản.',
+                      ),
+                      const SizedBox(height: 24),
+                      Card(
+                        child: Column(
+                          children: [
+                            ListTile(
+                              leading: const Icon(Icons.lock_outline),
+                              title: const Text('Đổi mật khẩu'),
+                              trailing: const Icon(Icons.chevron_right),
+                              onTap: () => Navigator.push(
+                                context,
+                                MaterialPageRoute<void>(
+                                  builder: (_) => const PasswordScreen(),
+                                ),
+                              ),
+                            ),
+                            ListTile(
+                              leading: const Icon(Icons.key),
+                              title: const Text('Tạo mã khôi phục'),
+                              trailing: const Icon(Icons.chevron_right),
+                              onTap: () => Navigator.push(
+                                context,
+                                MaterialPageRoute<void>(
+                                  builder: (_) =>
+                                      const PasswordScreen(recovery: true),
+                                ),
+                              ),
+                            ),
+                            ListTile(
+                              leading: const Icon(Icons.logout),
+                              title: const Text('Đăng xuất'),
+                              onTap: busy ? null : logout,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  )
+                : error != null && questions == null
                 ? Center(
                     child: TextButton(
                       onPressed: load,
@@ -116,28 +275,166 @@ class _AdminScreenState extends State<AdminScreen> {
                   )
                 : questions == null
                 ? const Center(child: CircularProgressIndicator())
-                : questions!.isEmpty
-                ? const Center(child: Text('Chưa có câu hỏi.'))
-                : ListView.builder(
-                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 96),
-                    itemCount: questions!.length,
-                    itemBuilder: (context, i) {
-                      final q = Map<String, dynamic>.from(questions![i]);
-                      return Card(
-                        child: ListTile(
-                          title: Text('${q['content']}'),
-                          subtitle: Text(
-                            'Ải ${q['stageId']} • Đáp án ${q['correctOption']}',
+                : tab == 0
+                ? ListView(
+                    padding: const EdgeInsets.all(24),
+                    children: [
+                      const Text(
+                        'Trung tâm quản lý',
+                        style: TextStyle(
+                          fontSize: 28,
+                          fontWeight: FontWeight.w800,
+                          color: Color(0xFF202D4A),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      const Text(
+                        'Theo dõi kho nội dung và cập nhật câu hỏi cho người học.',
+                      ),
+                      const SizedBox(height: 24),
+                      Wrap(
+                        spacing: 12,
+                        runSpacing: 12,
+                        children: [
+                          metric(
+                            'Tổng câu hỏi',
+                            '${all.length}',
+                            Icons.library_books_outlined,
                           ),
-                          onTap: busy ? null : () => edit(q),
-                          trailing: IconButton(
-                            tooltip: 'Xóa',
-                            onPressed: busy ? null : () => remove(q),
-                            icon: const Icon(Icons.delete_outline),
+                          metric(
+                            'Ngân hàng Boss',
+                            '${all.where((q) => q['stageId'] == 4).length}',
+                            Icons.shield_outlined,
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 28),
+                      const Text(
+                        'Nội dung theo ải',
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      for (int i = 1; i <= 4; i++)
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 10),
+                          child: Card(
+                            child: ListTile(
+                              leading: Icon(
+                                i == 4 ? Icons.shield : Icons.folder_outlined,
+                              ),
+                              title: Text(i == 4 ? 'Boss' : 'Ải $i'),
+                              subtitle: Text(
+                                '${all.where((q) => q['stageId'] == i).length} câu hỏi',
+                              ),
+                              trailing: const Icon(Icons.chevron_right),
+                              onTap: () => setState(() {
+                                stageFilter = i;
+                                tab = 1;
+                              }),
+                            ),
                           ),
                         ),
-                      );
-                    },
+                      const SizedBox(height: 16),
+                      FilledButton.icon(
+                        onPressed: () => setState(() {
+                          stageFilter = 0;
+                          tab = 1;
+                        }),
+                        icon: const Icon(Icons.edit_note),
+                        label: const Text('Quản lý tất cả câu hỏi'),
+                      ),
+                    ],
+                  )
+                : Column(
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Column(
+                          children: [
+                            TextField(
+                              decoration: const InputDecoration(
+                                hintText: 'Tìm nội dung câu hỏi…',
+                                prefixIcon: Icon(Icons.search),
+                              ),
+                              onChanged: (value) =>
+                                  setState(() => search = value),
+                            ),
+                            const SizedBox(height: 12),
+                            SingleChildScrollView(
+                              scrollDirection: Axis.horizontal,
+                              child: Row(
+                                children: [
+                                  for (int i = 0; i <= 4; i++)
+                                    Padding(
+                                      padding: const EdgeInsets.only(right: 8),
+                                      child: ChoiceChip(
+                                        label: Text(
+                                          i == 0
+                                              ? 'Tất cả'
+                                              : i == 4
+                                              ? 'Boss'
+                                              : 'Ải $i',
+                                        ),
+                                        selected: stageFilter == i,
+                                        onSelected: (_) =>
+                                            setState(() => stageFilter = i),
+                                      ),
+                                    ),
+                                ],
+                              ),
+                            ),
+                            Align(
+                              alignment: Alignment.centerLeft,
+                              child: Text('${filtered.length} câu hỏi'),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Expanded(
+                        child: filtered.isEmpty
+                            ? const Center(
+                                child: Text('Không có câu hỏi phù hợp.'),
+                              )
+                            : ListView.builder(
+                                padding: const EdgeInsets.fromLTRB(
+                                  16,
+                                  16,
+                                  16,
+                                  96,
+                                ),
+                                itemCount: filtered.length,
+                                itemBuilder: (context, i) {
+                                  final q = Map<String, dynamic>.from(
+                                    filtered[i],
+                                  );
+                                  return Padding(
+                                    padding: const EdgeInsets.only(bottom: 10),
+                                    child: Card(
+                                      child: ListTile(
+                                        title: Text('${q['content']}'),
+                                        subtitle: Text(
+                                          'Ải ${q['stageId']} • Đáp án ${q['correctOption']}',
+                                        ),
+                                        onTap: busy ? null : () => edit(q),
+                                        trailing: IconButton(
+                                          tooltip: 'Xóa',
+                                          onPressed: busy
+                                              ? null
+                                              : () => remove(q),
+                                          icon: const Icon(
+                                            Icons.delete_outline,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  );
+                                },
+                              ),
+                      ),
+                    ],
                   ),
           ),
         ],
