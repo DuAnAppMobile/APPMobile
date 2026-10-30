@@ -14,6 +14,59 @@ import 'package:english_rpg_app/services/player_service.dart';
 
 void main() {
   tearDown(AuthSession.clear);
+  testWidgets(
+    'used question opens impact confirmation and retires without deleting history',
+    (tester) async {
+      AuthSession.role = 'Admin';
+      String? mode;
+      final api = AccountApi(
+        client: MockClient((request) async {
+          expect(request.method, isNot('DELETE'));
+          if (request.url.path.endsWith('/impact'))
+            return http.Response(
+              jsonEncode({
+                'attempts': 3,
+                'completed': 2,
+                'activeQuestions': 10,
+                'requiredQuestions': 10,
+              }),
+              200,
+            );
+          if (request.url.path.endsWith('/resolve')) {
+            mode = jsonDecode(request.body)['mode'];
+            return http.Response('{"attempts":0,"exp":0}', 200);
+          }
+          return http.Response(
+            jsonEncode([
+              {
+                'id': 1,
+                'stageId': 1,
+                'content': 'Used question',
+                'correctOption': 'A',
+              },
+            ]),
+            200,
+          );
+        }),
+      );
+      await tester.pumpWidget(MaterialApp(home: AdminScreen(api: api)));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Câu hỏi'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byTooltip('Xóa / Xử lý câu lỗi'));
+      await tester.pumpAndSettle();
+      expect(find.text('Xử lý câu hỏi đã sử dụng'), findsOneWidget);
+      expect(find.textContaining('3 lượt liên quan'), findsOneWidget);
+      await tester.enterText(
+        find.byType(TextFormField).last,
+        'Older curriculum',
+      );
+      await tester.ensureVisible(find.text('Xác nhận xử lý'));
+      await tester.tap(find.text('Xác nhận xử lý'));
+      await tester.pumpAndSettle();
+      expect(mode, 'retire');
+    },
+  );
   testWidgets('admin login bypasses player home and university selection', (
     tester,
   ) async {

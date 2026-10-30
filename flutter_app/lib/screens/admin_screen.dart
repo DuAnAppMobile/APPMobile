@@ -19,6 +19,7 @@ class _AdminScreenState extends State<AdminScreen> {
   int stageFilter = 0;
   String search = '';
   bool loading = false;
+  bool showArchived = false;
   List<dynamic>? questions;
   String? error;
   bool busy = false;
@@ -108,6 +109,20 @@ class _AdminScreenState extends State<AdminScreen> {
   }
 
   Future<void> remove(Map<String, dynamic> question) async {
+    try {
+      final impact = await api.call('admin/questions/${question['id']}/impact');
+      if (!mounted) return;
+      if ((impact['attempts'] as int) > 0) {
+        await resolve(question, impact);
+        return;
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('$e')));
+      }
+      return;
+    }
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
@@ -142,6 +157,146 @@ class _AdminScreenState extends State<AdminScreen> {
     }
   }
 
+  Future<void> resolve(Map<String, dynamic> question, dynamic impact) async {
+    String mode = 'retire';
+    String answer =
+        question['correctionOption'] as String? ??
+        question['correctOption'] as String;
+    String reasonText = '';
+    final form = GlobalKey<FormState>();
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, update) => AlertDialog(
+          title: const Text('Xử lý câu hỏi đã sử dụng'),
+          content: SizedBox(
+            width: 440,
+            child: SingleChildScrollView(
+              child: Form(
+                key: form,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '${impact['attempts']} lượt liên quan • ${impact['completed']} lượt đã hoàn thành.',
+                    ),
+                    const SizedBox(height: 12),
+                    const Text(
+                      'Chỉ bù quyền lợi: không trừ EXP, không khóa lại ải hay thu hồi huy hiệu.',
+                    ),
+                    const SizedBox(height: 12),
+                    DropdownButtonFormField<String>(
+                      initialValue: mode,
+                      isExpanded: true,
+                      items: const [
+                        DropdownMenuItem(
+                          value: 'retire',
+                          child: Text('Ngừng dùng, giữ lịch sử'),
+                        ),
+                        DropdownMenuItem(
+                          value: 'correct',
+                          child: Text('Sửa đáp án, chấm bù'),
+                        ),
+                        DropdownMenuItem(
+                          value: 'void',
+                          child: Text('Hủy câu lỗi, tính đúng'),
+                        ),
+                      ],
+                      onChanged: (v) => update(() => mode = v!),
+                    ),
+                    if (mode == 'correct')
+                      DropdownButtonFormField<String>(
+                        initialValue: answer,
+                        decoration: const InputDecoration(
+                          labelText: 'Đáp án đúng mới',
+                        ),
+                        items: ['A', 'B', 'C', 'D']
+                            .map(
+                              (v) => DropdownMenuItem(value: v, child: Text(v)),
+                            )
+                            .toList(),
+                        onChanged: (v) => answer = v!,
+                      ),
+                    if (mode == 'correct')
+                      const Text(
+                        'Tạo bản thay thế cho lượt mới. Lượt cũ chỉ được tăng quyền lợi.',
+                      ),
+                    if (mode == 'void')
+                      const Text(
+                        'Tính câu lỗi là đúng, hoàn phí gợi ý. Lịch sử đánh dấu câu đã hủy.',
+                      ),
+                    if (mode != 'correct' &&
+                        (impact['activeQuestions'] as int) <=
+                            (impact['requiredQuestions'] as int))
+                      const Text(
+                        'Kho đang vừa đủ hoặc thiếu câu. Hãy thêm câu thay thế để có thể bắt đầu lượt mới.',
+                        style: TextStyle(color: Colors.deepOrange),
+                      ),
+                    TextFormField(
+                      onChanged: (value) => reasonText = value.trim(),
+                      maxLength: 1000,
+                      decoration: const InputDecoration(
+                        labelText: 'Lý do xử lý',
+                      ),
+                      validator: (v) => (v?.trim().length ?? 0) < 3
+                          ? 'Nhập ít nhất 3 ký tự.'
+                          : null,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Hủy'),
+            ),
+            FilledButton(
+              onPressed: () {
+                if (form.currentState!.validate()) Navigator.pop(context, true);
+              },
+              child: const Text('Xác nhận xử lý'),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+    setState(() => busy = true);
+    try {
+      final result = await api.call(
+        'admin/questions/${question['id']}/resolve',
+        method: 'POST',
+        body: {
+          'mode': mode,
+          'reason': reasonText,
+          if (mode == 'correct') 'correctOption': answer,
+        },
+      );
+      if (mounted) {
+        await load();
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                'Đã xử lý ${result['attempts']} lượt, cộng bù ${result['exp']} EXP.',
+              ),
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('$e')));
+      }
+    } finally {
+      if (mounted) setState(() => busy = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     if (AuthSession.role != 'Admin') {
@@ -155,6 +310,7 @@ class _AdminScreenState extends State<AdminScreen> {
         .where(
           (q) =>
               (stageFilter == 0 || q['stageId'] == stageFilter) &&
+              (showArchived || q['isArchived'] != true) &&
               '${q['content']}'.toLowerCase().contains(search.toLowerCase()),
         )
         .toList();
@@ -390,6 +546,13 @@ class _AdminScreenState extends State<AdminScreen> {
                               alignment: Alignment.centerLeft,
                               child: Text('${filtered.length} câu hỏi'),
                             ),
+                            SwitchListTile(
+                              contentPadding: EdgeInsets.zero,
+                              title: const Text('Hiện câu đã ngừng / đã hủy'),
+                              value: showArchived,
+                              onChanged: (value) =>
+                                  setState(() => showArchived = value),
+                            ),
                           ],
                         ),
                       ),
@@ -416,11 +579,17 @@ class _AdminScreenState extends State<AdminScreen> {
                                       child: ListTile(
                                         title: Text('${q['content']}'),
                                         subtitle: Text(
-                                          'Ải ${q['stageId']} • Đáp án ${q['correctOption']}',
+                                          'Ải ${q['stageId']} • Đáp án ${q['correctionOption'] ?? q['correctOption']}\n${q['isVoided'] == true
+                                              ? 'Đã hủy câu lỗi'
+                                              : q['isArchived'] == true
+                                              ? 'Đã ngừng sử dụng'
+                                              : 'Đang sử dụng'}',
                                         ),
-                                        onTap: busy ? null : () => edit(q),
+                                        onTap: busy || q['isArchived'] == true
+                                            ? null
+                                            : () => edit(q),
                                         trailing: IconButton(
-                                          tooltip: 'Xóa',
+                                          tooltip: 'Xóa / Xử lý câu lỗi',
                                           onPressed: busy
                                               ? null
                                               : () => remove(q),

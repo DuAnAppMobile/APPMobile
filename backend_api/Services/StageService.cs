@@ -127,7 +127,7 @@ public sealed class StageService(AppDbContext dbContext) : IStageService
         }
 
         var questionPool = await dbContext.Questions
-            .Where(question => question.StageId == stageId)
+            .Where(question => question.StageId == stageId && !question.IsArchived)
             .ToListAsync(cancellationToken);
         if (questionPool.Count < stage.QuestionCount)
         {
@@ -181,7 +181,7 @@ public sealed class StageService(AppDbContext dbContext) : IStageService
         }
 
         var questionPool = await dbContext.Questions
-            .Where(question => question.StageId == stage.Id)
+            .Where(question => question.StageId == stage.Id && !question.IsArchived)
             .ToListAsync(cancellationToken);
         if (questionPool.Count < BossQuestionCount)
         {
@@ -264,7 +264,7 @@ public sealed class StageService(AppDbContext dbContext) : IStageService
         }
 
         var selectedOption = request.SelectedOption.Trim().ToUpperInvariant();
-        var isCorrect = selectedOption == attemptQuestion.Question.CorrectOption;
+        var isCorrect = attemptQuestion.Question.IsVoided || selectedOption == attemptQuestion.Question.CorrectOption || selectedOption == attemptQuestion.Question.CorrectionOption;
         var isBoss = attempt.Stage.Type == StageType.Boss;
         var answer = new AttemptAnswer
         {
@@ -358,6 +358,7 @@ public sealed class StageService(AppDbContext dbContext) : IStageService
         int attemptId,
         CancellationToken cancellationToken)
     {
+        await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
         var attempt = await dbContext.StageAttempts
             .Include(item => item.Stage)
             .Include(item => item.AttemptQuestions)
@@ -375,9 +376,11 @@ public sealed class StageService(AppDbContext dbContext) : IStageService
         {
             attempt.Status = StageAttemptStatus.Expired;
             await dbContext.SaveChangesAsync(cancellationToken);
+            await transaction.CommitAsync(cancellationToken);
             throw new InvalidOperationException("This attempt has expired.");
         }
 
+        QuestionCompensation.ApplyAnswers(attempt);
         if (!isBoss && attempt.AttemptAnswers.Count != attempt.AttemptQuestions.Count)
         {
             throw new InvalidOperationException("All questions must be answered before the attempt can be finished.");
@@ -447,6 +450,7 @@ public sealed class StageService(AppDbContext dbContext) : IStageService
 
         if (isBoss)
         {
+            await transaction.CommitAsync(cancellationToken);
             return new AttemptFinishSubmission(
                 null,
                 new BossFinishAttemptResponse(
@@ -469,15 +473,16 @@ public sealed class StageService(AppDbContext dbContext) : IStageService
                 return new IncorrectQuestionReviewResponse(
                     item.QuestionId,
                     item.OrderNo,
-                    item.Question.Content,
+                    ReviewContent(item.Question),
                     answer.SelectedOption!,
-                    item.Question.CorrectOption,
+                    item.Question.CorrectionOption ?? item.Question.CorrectOption,
                     item.Question.Hint1,
                     item.Question.Hint2,
                     item.Question.Explanation);
             })
             .ToList();
 
+        await transaction.CommitAsync(cancellationToken);
         return new AttemptFinishSubmission(
             new FinishStageAttemptResponse(
                 attempt.Id,
@@ -545,9 +550,9 @@ public sealed class StageService(AppDbContext dbContext) : IStageService
                     return new BossQuestionReviewResponse(
                         item.QuestionId,
                         item.OrderNo,
-                        item.Question.Content,
+                        ReviewContent(item.Question),
                         answer?.SelectedOption,
-                        item.Question.CorrectOption,
+                        item.Question.CorrectionOption ?? item.Question.CorrectOption,
                         item.Question.Explanation);
                 })
                 .ToList();
@@ -573,9 +578,9 @@ public sealed class StageService(AppDbContext dbContext) : IStageService
                 return new IncorrectQuestionReviewResponse(
                     item.QuestionId,
                     item.OrderNo,
-                    item.Question.Content,
+                    ReviewContent(item.Question),
                     answer.SelectedOption!,
-                    item.Question.CorrectOption,
+                    item.Question.CorrectionOption ?? item.Question.CorrectOption,
                     item.Question.Hint1,
                     item.Question.Hint2,
                     item.Question.Explanation);
@@ -651,7 +656,7 @@ public sealed class StageService(AppDbContext dbContext) : IStageService
                 return new AttemptQuestionResponse(
                     item.QuestionId,
                     item.OrderNo,
-                    item.Question.Content,
+                    ReviewContent(item.Question),
                     item.Question.OptionA,
                     item.Question.OptionB,
                     item.Question.OptionC,
@@ -667,6 +672,9 @@ public sealed class StageService(AppDbContext dbContext) : IStageService
             ToUtcOffset(attempt.ExpiresAt),
             questions);
     }
+
+    private static string ReviewContent(Question question) =>
+        (question.IsVoided ? "[Câu lỗi đã hủy – được tính đúng] " : question.CorrectionOption != null ? "[Đã sửa đáp án – chỉ bù quyền lợi] " : "") + question.Content;
 
     private static DateTimeOffset ToUtcOffset(DateTime value) =>
         new(DateTime.SpecifyKind(value, DateTimeKind.Utc));

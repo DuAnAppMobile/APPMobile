@@ -314,7 +314,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                 '${item['stageName']} • ${passed ? 'Đã qua' : 'Chưa đạt'}',
               ),
               subtitle: Text(
-                '${item['correctCount']}/${item['totalQuestions']} câu đúng\n$dateText',
+                '${item['correctCount']}/${item['totalQuestions']} câu đúng\n$dateText${item['hasAdjustedQuestions'] == true ? '\nĐã xử lý câu lỗi • Bù ${item['compensationExp'] ?? 0} EXP' : ''}',
               ),
               isThreeLine: true,
               trailing: Text('+${item['expEarned']} EXP'),

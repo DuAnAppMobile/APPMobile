@@ -271,6 +271,9 @@ namespace EnglishRpg.Api.Migrations
                         .HasMaxLength(1)
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("CorrectionOption")
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("Explanation")
                         .HasColumnType("TEXT");
 
@@ -278,6 +281,15 @@ namespace EnglishRpg.Api.Migrations
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Hint2")
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("IsArchived")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool>("IsVoided")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("ModerationNote")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("OptionA")
@@ -356,6 +368,9 @@ namespace EnglishRpg.Api.Migrations
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("CompensationExp")
                         .HasColumnType("INTEGER");
 
                     b.Property<int>("CorrectCount")

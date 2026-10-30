@@ -3,6 +3,7 @@ namespace EnglishRpg.Api.Models;
 public class StageAttempt
 {
     public int Id { get; set; }
+    public int CompensationExp { get; set; }
     public int PlayerId { get; set; }
     public int StageId { get; set; }
     public DateTime StartedAt { get; set; }

@@ -69,6 +69,10 @@ builder.Services.AddCors(options =>
 builder.Services.AddOpenApi();
 
 var app = builder.Build();
+await using (var schemaScope = app.Services.CreateAsyncScope())
+{
+    await ModerationSchema.UpgradeAsync(schemaScope.ServiceProvider.GetRequiredService<AppDbContext>());
+}
 
 if (args.Contains("--seed", StringComparer.OrdinalIgnoreCase))
 {

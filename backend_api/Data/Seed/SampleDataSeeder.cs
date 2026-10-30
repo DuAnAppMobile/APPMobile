@@ -290,7 +290,7 @@ public static class SampleDataSeeder
             var stageId = stagesByOrder[seededQuestion.StageOrder].Id;
             if (questionsByKey.TryGetValue((stageId, seededQuestion.OrderNo), out var existingQuestion))
             {
-                ApplyQuestionData(existingQuestion, seededQuestion.Data);
+                // Never overwrite administrator edits or historical question versions on startup.
                 continue;
             }
 

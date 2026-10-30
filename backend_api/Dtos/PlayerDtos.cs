@@ -44,6 +44,8 @@ public class PlayerProfileDto
 
 public class PlayerHistoryDto
 {
+    public int CompensationExp { get; set; }
+    public bool HasAdjustedQuestions { get; set; }
     public int AttemptId { get; set; }
     public string StageName { get; set; } = string.Empty;
     public int CorrectCount { get; set; }

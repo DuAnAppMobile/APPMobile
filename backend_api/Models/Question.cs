@@ -3,6 +3,10 @@ namespace EnglishRpg.Api.Models;
 public class Question
 {
     public int Id { get; set; }
+    public bool IsArchived { get; set; }
+    public bool IsVoided { get; set; }
+    public string? CorrectionOption { get; set; }
+    public string? ModerationNote { get; set; }
     public int StageId { get; set; }
     public int OrderNo { get; set; }
     public required string Content { get; set; }

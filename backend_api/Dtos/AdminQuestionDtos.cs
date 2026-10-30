@@ -41,4 +41,13 @@ public sealed record AdminQuestionDto(
     string CorrectOption,
     string? Hint1,
     string? Hint2,
-    string? Explanation);
+    string? Explanation,
+    bool IsArchived,
+    bool IsVoided,
+    string? CorrectionOption,
+    string? ModerationNote);
+
+public sealed record ResolveQuestionRequest(
+    [Required, RegularExpression("^(retire|correct|void)$")] string Mode,
+    [Required, StringLength(1000, MinimumLength = 3)] string Reason,
+    [RegularExpression("^[A-Da-d]$")] string? CorrectOption);

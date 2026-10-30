@@ -58,6 +58,8 @@ public class PlayerService(AppDbContext dbContext) : IPlayerService
             .Select(attempt => new
             {
                 AttemptId = attempt.Id,
+                attempt.CompensationExp,
+                HasAdjustedQuestions = attempt.AttemptQuestions.Any(q => q.Question.IsVoided || q.Question.CorrectionOption != null),
                 StageName = attempt.Stage.Name,
                 attempt.CorrectCount,
                 TotalQuestions = attempt.AttemptQuestions.Count,
@@ -71,6 +73,8 @@ public class PlayerService(AppDbContext dbContext) : IPlayerService
             .Select(attempt => new PlayerHistoryDto
             {
                 AttemptId = attempt.AttemptId,
+                CompensationExp = attempt.CompensationExp,
+                HasAdjustedQuestions = attempt.HasAdjustedQuestions,
                 StageName = attempt.StageName,
                 CorrectCount = attempt.CorrectCount,
                 TotalQuestions = attempt.TotalQuestions,
